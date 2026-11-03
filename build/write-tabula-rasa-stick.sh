@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # NOTE:
 #   Requires: Linux, bash, lsblk, dd, sudo (for the raw write).
-#             Docker for --build, the GitHub CLI (gh, logged in) for --from-release of a private repository.
+#             Docker for --build. --from-release uses the GitHub CLI (gh) when installed, else the public API.
 #   Erases the selected USB stick completely and writes the Linux Tabula Rasa ISO onto it.
 #   Windows: use Write-TabulaRasaStick.ps1 next to this script.
 #

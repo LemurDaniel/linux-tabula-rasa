@@ -22,6 +22,93 @@ Each kind of disk needs its own method:
 | NVMe | NVMe Sanitize (`nvme-cli`) | ✅ |
 | USB stick, SD card | Overwrite | ⚠️ the controller may keep blocks, destroy physically for sensitive data |
 
+## Getting started
+You need a USB stick of at least 2 GB, everything on it gets erased.
+The stick scripts only offer USB disks (never the boot or system disk), want the disk number or device path
+typed before they erase anything and read the stick back after writing to verify it.
+
+| Variant | You need |
+| --- | --- |
+| [1. Flash from release](#1-flash-from-release) | Nothing extra, just an internet connection |
+| [2. Flash from build](#2-flash-from-build) | An ISO you already have: built earlier, or downloaded from a GitHub Actions run |
+| [3. Build and flash it yourself](#3-build-and-flash-it-yourself) | Docker (Docker Desktop on Windows) with privileged containers |
+
+On Windows the stick script needs an elevated PowerShell 7 (Run as administrator), on Linux it asks for `sudo`.
+
+### 1. Flash from release
+Downloads the ISO of the newest GitHub release into `out/`, checks it against `SHA256SUMS` and writes it.
+
+Windows:
+```powershell
+./build/Write-TabulaRasaStick.ps1 -FromRelease
+```
+
+Linux:
+```bash
+./build/write-tabula-rasa-stick.sh --from-release
+```
+
+The scripts use the [GitHub CLI](https://cli.github.com/) when it is installed, else the public GitHub API.
+A release of another repository (a fork): `-Repository owner/name` or `--repository owner/name`.
+Prefer your own tool? Download the ISO from the [latest release](https://github.com/LemurDaniel/linux-tabula-rasa/releases/latest)
+and continue with [Flash from build](#2-flash-from-build).
+
+### 2. Flash from build
+Writes an ISO that already exists. Without a path the scripts take the newest ISO in `out/`.
+
+Windows:
+```powershell
+./build/Write-TabulaRasaStick.ps1
+./build/Write-TabulaRasaStick.ps1 -IsoPath C:\Downloads\linux-tabula-rasa-amd64.hybrid.iso
+```
+
+Linux:
+```bash
+./build/write-tabula-rasa-stick.sh
+./build/write-tabula-rasa-stick.sh --iso ~/Downloads/linux-tabula-rasa-amd64.hybrid.iso
+```
+
+An ISO from GitHub Actions: run **Build ISO** in the Actions tab, download the artifact `linux-tabula-rasa-iso`
+and pass the ISO inside. Rufus (DD mode) or balenaEtcher write it too, without the read-back check.
+
+### 3. Build and flash it yourself
+Builds the ISO with live-build in Docker (20 to 40 minutes the first time), then writes it.
+
+Windows:
+```powershell
+./build/Write-TabulaRasaStick.ps1 -Build
+```
+
+Linux:
+```bash
+./build/write-tabula-rasa-stick.sh --build
+```
+
+With your own hotspot (used when the stick finds no LAN):
+```powershell
+./build/Write-TabulaRasaStick.ps1 -Build -HotspotSsid 'Wiper' -HotspotPassword 'not-my-wifi-password'
+```
+
+Only the ISO, without a stick:
+```powershell
+./build/Build-TabulaRasaIso.ps1
+```
+
+The hotspot password is stored in plain text on the stick and shown on the kiosk, so pick one you use nowhere else.
+
+### Options at a glance
+| | Windows | Linux |
+| --- | --- | --- |
+| Newest GitHub release | `-FromRelease` | `--from-release` |
+| Repository of the release | `-Repository owner/name` | `--repository owner/name` |
+| Build first | `-Build` | `--build` |
+| A specific ISO | `-IsoPath <file>` | `--iso <file>` |
+| The stick, without the question | `-DiskNumber <n>` | `--device /dev/sdX` |
+| Disks over 256 GB | `-Force` | `--force` |
+| No read-back check | `-SkipVerify` | `--skip-verify` |
+| Hotspot of the build | `-HotspotSsid`, `-HotspotPassword` | `--hotspot-ssid`, `--hotspot-password` |
+| Only show what would happen | `-WhatIf` | |
+
 ## How it works
 ```
 tty1   Kiosk: cage + Chromium  ──►  http://localhost  ──┐
@@ -54,50 +141,13 @@ tty2   Text menu (PwshSpectreConsole), also the fallback without a GPU
 `Alt+F2` switches to the text menu, `Alt+F1` back to the kiosk. When the kiosk cannot start (no GPU),
 the stick switches to the text menu on its own.
 
-## Build
-Requires Docker (Docker Desktop on Windows) with privileged containers.
-
-```powershell
-./build/Build-TabulaRasaIso.ps1
-```
-
-```powershell
-./build/Build-TabulaRasaIso.ps1 -HotspotSsid 'Wiper' -HotspotPassword 'not-my-wifi-password'
-```
-
-The ISO lands in `out/`.
-
-### Write a stick
-Windows (elevated PowerShell 7):
-```powershell
-./build/Write-TabulaRasaStick.ps1 -FromRelease
-```
-
-Linux:
-```bash
-./build/write-tabula-rasa-stick.sh --from-release
-```
-
-| Source of the ISO | Windows | Linux |
-| --- | --- | --- |
-| Newest GitHub release, checked against `SHA256SUMS` | `-FromRelease` | `--from-release` |
-| Build it now with Docker | `-Build` | `--build` |
-| A file | `-IsoPath <file>` | `--iso <file>` |
-| Newest ISO in `out/` | (default) | (default) |
-
-Both list the USB disks, want the disk number or device path typed, write the ISO and read it back to verify.
-The repository is private, so `-FromRelease` needs the [GitHub CLI](https://cli.github.com/) logged in (`gh auth login`).
-Rufus (DD mode) or balenaEtcher work too.
-
-### Releases
+## Releases
 A tag `v*` builds the ISO on GitHub Actions and publishes it as release
-(`linux-tabula-rasa-<tag>-amd64.iso` plus `SHA256SUMS`):
+(`linux-tabula-rasa-<tag>-amd64.iso` plus `SHA256SUMS`), which [Flash from release](#1-flash-from-release) picks up:
 
 ```bash
 git tag v0.1.0 && git push --tags
 ```
-The hotspot password is stored in plain text on the stick and shown on the kiosk, so pick one you use nowhere else.
-GitHub Actions builds it too: run **Build ISO** manually or push a `v*` tag, the ISO is attached as artifact.
 
 ## Test
 ```powershell

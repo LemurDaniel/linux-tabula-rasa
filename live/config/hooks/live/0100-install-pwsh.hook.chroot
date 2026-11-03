@@ -30,14 +30,15 @@ ln -sf "${PWSH_HOME}/pwsh" /usr/bin/pwsh
 rm -f "${PWSH_ARCHIVE}" hashes.sha256
 
 # Install the modules for all users, straight from the gallery package (a .nupkg is a zip).
-# Install-PSResource is not found inside the chroot, so no gallery client is involved.
+# Inside the chroot pwsh loads none of its bundled modules (neither Install-PSResource nor
+# Expand-Archive are found), so unzip extracts and the manifest proves the module is in place.
 install_module() {
     target="/usr/local/share/powershell/Modules/$1/$2"
     mkdir -p "${target}"
     curl -fsSL -o "/tmp/$1.nupkg" "https://www.powershellgallery.com/api/v2/package/$1/$2"
-    pwsh -NoLogo -NoProfile -Command "Expand-Archive -LiteralPath '/tmp/$1.nupkg' -DestinationPath '${target}' -Force"
+    unzip -q -o "/tmp/$1.nupkg" -d "${target}"
     rm -rf "${target}/_rels" "${target}/package" "${target}/[Content_Types].xml" "/tmp/$1.nupkg"
-    pwsh -NoLogo -NoProfile -Command "Import-Module $1 -RequiredVersion $2 -ErrorAction Stop"
+    test -f "${target}/$1.psd1"
 }
 
 install_module PwshSpectreConsole "${SPECTRE_VERSION}"

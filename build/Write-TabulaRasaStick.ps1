@@ -1,6 +1,6 @@
 # NOTE:
 #   Requires: Windows, an elevated PowerShell 7 (Run as administrator).
-#             Docker for -Build, the GitHub CLI (gh, logged in) for -FromRelease of a private repository.
+#             Docker for -Build. -FromRelease uses the GitHub CLI (gh) when installed, else the public API.
 #   Erases the selected USB stick completely and writes the Linux Tabula Rasa ISO onto it.
 #   Linux: use write-tabula-rasa-stick.sh next to this script.
 #

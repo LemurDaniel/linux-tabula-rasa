@@ -17,6 +17,7 @@ sleuthkit
 ca-certificates
 curl
 libicu76
+unzip
 
 # Kiosk: cage (Wayland kiosk compositor) + Chromium on tty1
 cage
