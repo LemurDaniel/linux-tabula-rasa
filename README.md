@@ -2,8 +2,8 @@
 A bootable Linux live USB stick that securely wipes HDDs, SSDs, NVMe drives, USB sticks and SD cards.
 Plug it in, boot, pick a disk on the screen or on your phone, confirm, done.
 
-> **Status: scaffold.** Disk detection, the data views, the text menu and the web UI work, the wipe methods are not
-> implemented yet and refuse to run.
+> **Status: early.** Everything works end to end on test images. Overwrite is tested on real block devices,
+> ATA Secure Erase and NVMe Sanitize are implemented but not yet tested on real drives.
 
 > **🤖 AI notice:** Large parts of this project were written with the help of AI ([Claude Code](https://claude.com/claude-code) by Anthropic).
 > The code is tested (Pester, PSScriptAnalyzer, end-to-end runs on loop devices), but AI can make mistakes.
@@ -17,10 +17,14 @@ Each kind of disk needs its own method:
 
 | Kind | Method | Complete |
 | --- | --- | --- |
-| HDD | Overwrite with zeros (one pass) | ✅ |
-| SATA SSD | ATA Secure Erase (`hdparm`) | ✅ |
-| NVMe | NVMe Sanitize (`nvme-cli`) | ✅ |
+| HDD | Overwrite with zeros (one pass), then every sample must read zero | ✅ |
+| SATA SSD | ATA Secure Erase (`hdparm`), enhanced when supported; a frozen drive is unfrozen by a 5 s suspend | ✅ |
+| NVMe | NVMe Sanitize (`nvme-cli`): crypto erase > block erase > overwrite, else Format with Secure Erase | ✅ |
 | USB stick, SD card | Overwrite | ⚠️ the controller may keep blocks, destroy physically for sensitive data |
+
+Before every wipe the stick refuses its own disk and any disk mounted outside Tabula Rasa.
+An NVMe controller with more than one namespace is refused, Sanitize would erase all of them.
+If an ATA Secure Erase fails, the temporary password `TabulaRasa` is removed again, so the drive never stays locked.
 
 ## Getting started
 You need a USB stick of at least 2 GB, everything on it gets erased.
@@ -160,6 +164,8 @@ Invoke-Pester -Path ./src
 | --- | --- |
 | `build/` | Builder image and build script, see [build/README.md](build/README.md). |
 | `live/` | live-build config of the image, see [live/README.md](live/README.md). |
-| `src/TabulaRasa/` | Core module: disk detection, data views, wipe methods, text menu, tests. |
-| `src/TabulaRasaWeb/` | Pode server, REST API ([routes](src/TabulaRasaWeb/routes/README.md)), web UI (`public/`), tests. |
+| `src/TabulaRasa/` | Core module: disk detection, data views, wipe methods, text menu. |
+| `src/TabulaRasa.Tests/` | Pester tests of the core module. |
+| `src/TabulaRasa.Web/` | Pode server, REST API ([routes](src/TabulaRasa.Web/routes/README.md)), web UI (`public/`). |
+| `src/TabulaRasa.Web.Tests/` | Pester tests of the server logic. |
 | `.github/workflows/build.iso.yaml` | Tests and ISO build on GitHub Actions. |

@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: read access to the device (root for a block device), or a plain file.
+#
+#   Test-TabulaRasaDiskData -Path /dev/sdb -SizeBytes 500107862016
+
 function Test-TabulaRasaDiskData {
     <#
     .SYNOPSIS

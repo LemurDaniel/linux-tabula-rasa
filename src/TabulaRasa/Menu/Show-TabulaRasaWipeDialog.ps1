@@ -1,3 +1,13 @@
+# NOTE:
+#   Requires: PwshSpectreConsole, an interactive console, Linux and root for the wipe.
+#
+#   Show-TabulaRasaWipeDialog -Disk (Get-TabulaRasaDisk | Select-Object -First 1)
+
+#
+#   Chapters:
+#     CONFIRM AND WIPE DISK   Shows the plan, confirms the disk, wipes it and checks the result.
+#
+
 function Show-TabulaRasaWipeDialog {
     <#
     .SYNOPSIS
@@ -31,9 +41,26 @@ function Show-TabulaRasaWipeDialog {
     $REPLUG_POLL_MS        = 1000
     $REPLUG_TIMEOUT_SECONDS = 120
 
+    # ===========================================================================
+    # ========================   CONFIRM AND WIPE DISK   ========================
+    # ===========================================================================
+    #
+    #   1. Plan                  Shows the wipe plan and the warning of the method.
+    #   2. Serial confirmation   Asks for the serial from the label when the confirmation is Serial.
+    #   3. Replug confirmation   Waits for unplug and plug in when the confirmation is Replug.
+    #   4. Wipe                  Runs the wipe with a progress bar,
+    #                            estimated for ATA Secure Erase, which reports none.
+    #   5. Result                Shows the duration and the zero check of the sampled blocks.
+    #
+
+    # ---------------------------------------------------------------------------
+    # Plan
+    #   Shows the wipe plan and the warning of the method.
+    # ---------------------------------------------------------------------------
+
     $WipeInfo = Resolve-TabulaRasaWipeMethod -Kind $Disk.Kind
 
-    # Plan: a Text renderable prints model names like '[ATA]' as they are, a string would be parsed as markup.
+    # A Text renderable prints model names like '[ATA]' as they are, a string would be parsed as markup.
     $Summary = @(
         "Disk:          $($Disk.Path)  $($Disk.Model)  $($Disk.Serial)"
         "Kind:          $($Disk.Kind)"
@@ -47,7 +74,11 @@ function Show-TabulaRasaWipeDialog {
         Write-SpectreHost -Message "[yellow]$(Get-SpectreEscapedText -Text $WipeInfo.Warning)[/]"
     }
 
-    # When the confirmation is Serial
+    # ---------------------------------------------------------------------------
+    # Serial confirmation
+    #   Asks for the serial from the label when the confirmation is Serial.
+    # ---------------------------------------------------------------------------
+
     if ($WipeInfo.Confirmation -EQ 'Serial') {
         $ConfirmToken = [System.String]::IsNullOrEmpty($Disk.Serial) ? $Disk.Path : $Disk.Serial
         $answer       = Read-SpectreText -Message "Type [red]$(Get-SpectreEscapedText -Text $ConfirmToken)[/] to wipe this disk, anything else cancels" -AllowEmpty
@@ -61,7 +92,11 @@ function Show-TabulaRasaWipeDialog {
         $Target = $Disk
     }
 
-    # When the confirmation is Replug
+    # ---------------------------------------------------------------------------
+    # Replug confirmation
+    #   Waits for unplug and plug in when the confirmation is Replug.
+    # ---------------------------------------------------------------------------
+
     if ($WipeInfo.Confirmation -EQ 'Replug') {
         $deadline = [System.DateTime]::Now.AddSeconds($REPLUG_TIMEOUT_SECONDS)
 
@@ -102,15 +137,40 @@ function Show-TabulaRasaWipeDialog {
         }
     }
 
+    # ---------------------------------------------------------------------------
     # Wipe
+    #   Runs the wipe with a progress bar,
+    #   estimated for ATA Secure Erase, which reports none.
+    # ---------------------------------------------------------------------------
+
     $TargetInfo = Resolve-TabulaRasaWipeMethod -Kind $Target.Kind
     try {
-        Invoke-TabulaRasaWipe -Path $Target.Path -Method $TargetInfo.Method -Confirm:$false
-        Write-SpectreHost -Message "[green]$(Get-SpectreEscapedText -Text $Target.Path) wiped.[/]"
+        $Result = Invoke-SpectreCommandWithProgress -ScriptBlock {
+            param (
+                [Spectre.Console.ProgressContext] $Context
+            )
+            $task = $Context.AddTask("Wiping $($Target.Path) ($($TargetInfo.Method))")
+            Invoke-TabulaRasaWipe -Path $Target.Path -Method $TargetInfo.Method -Confirm:$false -OnProgress {
+                param ($Percent)
+                $task.Value = $Percent
+            }
+            $task.Value = 100
+        }
     }
-    catch [System.NotImplementedException] {
-        # Handled: the scaffold has no wipe methods yet, the menu stays usable.
-        Write-SpectreHost -Message "[red]$(Get-SpectreEscapedText -Text $_.Exception.Message)[/]"
+    catch [System.InvalidOperationException], [System.NotSupportedException] {
+        # Handled: the reason (frozen drive, foreign mount, failing disk) is shown, the menu stays usable.
+        Write-SpectreHost -Message "[red]Wipe failed: $(Get-SpectreEscapedText -Text $_.Exception.Message)[/]"
+        Read-SpectrePause
+        return
     }
+
+    # ---------------------------------------------------------------------------
+    # Result
+    #   Shows the duration and the zero check of the sampled blocks.
+    # ---------------------------------------------------------------------------
+
+    $check =$Result.IsAllZero ? 'all sampled blocks read zero' : "$($Result.NonZeroCount) of $($Result.SampleCount) sampled blocks are not zero (normal after a crypto erase)"
+    Write-SpectreHost -Message "[green]$(Get-SpectreEscapedText -Text "$($Target.Path) wiped with $($Result.Detail) in $($Result.Seconds) s.")[/]"
+    Write-SpectreHost -Message "[grey]Check: $(Get-SpectreEscapedText -Text $check).[/]"
     Read-SpectrePause
 }

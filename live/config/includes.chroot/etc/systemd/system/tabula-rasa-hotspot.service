@@ -7,7 +7,7 @@ Wants=NetworkManager.service
 [Service]
 Type=oneshot
 RemainAfterExit=yes
-ExecStart=/usr/bin/pwsh -NoLogo -NoProfile -Command "Import-Module /opt/tabula-rasa/TabulaRasaWeb; Start-TabulaRasaWebHotspot -Verbose"
+ExecStart=/usr/bin/pwsh -NoLogo -NoProfile -Command "Import-Module /opt/tabula-rasa/TabulaRasa.Web; Start-TabulaRasaWebHotspot -Verbose"
 
 [Install]
 WantedBy=multi-user.target

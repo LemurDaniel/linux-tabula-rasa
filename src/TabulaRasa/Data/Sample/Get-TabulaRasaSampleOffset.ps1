@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, pure calculation.
+#
+#   Get-TabulaRasaSampleOffset -SizeBytes 500107862016 -BlockSize 4096 -SampleCount 64
+
 function Get-TabulaRasaSampleOffset {
     <#
     .SYNOPSIS

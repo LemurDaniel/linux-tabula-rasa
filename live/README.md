@@ -15,5 +15,5 @@ The folder layout is the one live-build expects, the Dockerfile copies it as bui
 | `config/includes.chroot/root/.bash_profile` | Starts the text menu on tty2. |
 
 Copied in at build time by the Dockerfile:
-- `src/TabulaRasa` and `src/TabulaRasaWeb` to `/opt/tabula-rasa/` (without tests).
+- `src/TabulaRasa` and `src/TabulaRasa.Web` to `/opt/tabula-rasa/` (their tests live in the `*.Tests` folders next to them and stay out).
 - `hotspot.json` (from `Build-TabulaRasaIso.ps1 -HotspotSsid/-HotspotPassword`) to `/etc/tabula-rasa/`.

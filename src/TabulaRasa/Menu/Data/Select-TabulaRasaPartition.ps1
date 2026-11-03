@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: PwshSpectreConsole, an interactive console, Linux and lsblk.
+#
+#   Select-TabulaRasaPartition -Disk $disk -MountableOnly
+
 function Select-TabulaRasaPartition {
     <#
     .SYNOPSIS

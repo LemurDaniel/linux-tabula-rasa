@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: Linux, root, findmnt, umount and blockdev (util-linux).
+#
+#   Dismount-TabulaRasaPartition -Path /dev/sdb1
+
 function Dismount-TabulaRasaPartition {
     <#
     .SYNOPSIS

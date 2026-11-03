@@ -1,3 +1,13 @@
+# NOTE:
+#   Requires: a partition mounted by Mount-TabulaRasaPartition.
+#
+#   Get-TabulaRasaDirectory -MountPoint /run/tabula-rasa/mnt/sdb1 -RelativePath 'Users/Daniel'
+
+#
+#   Chapters:
+#     LIST FOLDER ENTRIES   Checks the path and lists the folder, folders first.
+#
+
 function Get-TabulaRasaDirectory {
     <#
     .SYNOPSIS
@@ -38,8 +48,20 @@ function Get-TabulaRasaDirectory {
         $RelativePath = ''
     )
 
+    # ===========================================================================
+    # =========================   LIST FOLDER ENTRIES   =========================
+    # ===========================================================================
+    #
+    #   1. Validations   Fails on a path that leaves the mount point or passes a link.
+    #   2. Entries       Lists the entries of the folder, folders first.
+    #
+
+    # ---------------------------------------------------------------------------
     # Validations
-    $Root    = [System.IO.Path]::GetFullPath($MountPoint).TrimEnd('/')
+    #   Fails on a path that leaves the mount point or passes a link.
+    # ---------------------------------------------------------------------------
+
+    $Root   = [System.IO.Path]::GetFullPath($MountPoint).TrimEnd('/')
     $FullPath = [System.IO.Path]::GetFullPath([System.IO.Path]::Combine($Root, $RelativePath.TrimStart('/'))).TrimEnd('/')
 
     if ($FullPath -NE $Root -AND -NOT $FullPath.StartsWith("$Root/", [System.StringComparison]::Ordinal)) {
@@ -55,7 +77,11 @@ function Get-TabulaRasaDirectory {
         }
     }
 
+    # ---------------------------------------------------------------------------
     # Entries
+    #   Lists the entries of the folder, folders first.
+    # ---------------------------------------------------------------------------
+
     return Get-ChildItem -LiteralPath $FullPath -Force
     | ForEach-Object {
         $isLink = $null -NE $_.LinkType

@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: Linux, root, lsblk and mount, the loaded TabulaRasa module.
+#
+#   Get-TabulaRasaDataOverview -Disk (Get-TabulaRasaDisk | Select-Object -First 1)
+
 function Get-TabulaRasaDataOverview {
     <#
     .SYNOPSIS

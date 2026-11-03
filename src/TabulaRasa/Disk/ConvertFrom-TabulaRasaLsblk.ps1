@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, pure parsing of the lsblk JSON.
+#
+#   lsblk --json --bytes --nodeps --output NAME,PATH,TYPE,SIZE,MODEL,SERIAL,TRAN,ROTA,RM | ConvertFrom-TabulaRasaLsblk
+
 function ConvertFrom-TabulaRasaLsblk {
     <#
     .SYNOPSIS

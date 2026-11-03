@@ -1,3 +1,5 @@
+# Installed without recommends (auto/config), so everything the system needs is listed here.
+
 # Live system
 live-boot
 live-config
@@ -20,25 +22,30 @@ libicu76
 unzip
 
 # Kiosk: cage (Wayland kiosk compositor) + Chromium on tty1
+# Mesa renders on Intel/AMD GPUs, without GPU firmware the kiosk falls back to software rendering.
 cage
 chromium
+chromium-sandbox
+libgl1-mesa-dri
 fonts-dejavu-core
 fonts-noto-color-emoji
 
-# Network: DHCP on LAN, hotspot, mDNS (tabula-rasa.local), QR codes
+# Network: DHCP on LAN, hotspot (wpasupplicant), mDNS (tabula-rasa.local), QR codes
 network-manager
+wpasupplicant
 dnsmasq-base
 avahi-daemon
+iproute2
 iw
 wireless-regdb
 qrencode
 
-# Firmware for common Wi-Fi and GPU chips (non-free-firmware)
+# Firmware for common Wi-Fi chips (non-free-firmware), no GPU firmware
 firmware-iwlwifi
 firmware-realtek
 firmware-atheros
-firmware-misc-nonfree
-firmware-amd-graphics
+firmware-mediatek
+firmware-brcm80211
 
 # Console
 console-setup

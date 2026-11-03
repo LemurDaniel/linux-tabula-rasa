@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: Linux, lsblk and findmnt (util-linux).
+#
+#   Get-TabulaRasaDisk | Format-Table Path, Kind, Model, Serial
+
 function Get-TabulaRasaDisk {
     <#
     .SYNOPSIS

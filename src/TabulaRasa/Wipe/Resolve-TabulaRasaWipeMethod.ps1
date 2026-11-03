@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, pure mapping.
+#
+#   Resolve-TabulaRasaWipeMethod -Kind Nvme
+
 function Resolve-TabulaRasaWipeMethod {
     <#
     .SYNOPSIS

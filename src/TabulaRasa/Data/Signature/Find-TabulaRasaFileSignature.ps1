@@ -1,3 +1,14 @@
+# NOTE:
+#   Requires: read access to the device (root), the loaded TabulaRasa module
+#             (TabulaRasa.SignatureScanner) and data.signatures.psd1 next to this file.
+#
+#   Find-TabulaRasaFileSignature -Path /dev/sdb -SizeBytes 32000000000 -Mode Quick
+
+#
+#   Chapters:
+#     SCAN FOR FILE HEADERS   Loads the signatures, scans the disk and returns the found types.
+#
+
 function Find-TabulaRasaFileSignature {
     <#
     .SYNOPSIS
@@ -79,7 +90,20 @@ function Find-TabulaRasaFileSignature {
     $QUICK_SAMPLE_COUNT = 254       # plus first and last block = 256 blocks
     $DEEP_CHUNK_SIZE    = 4194304   # a multiple of the sector size, so no header crosses a chunk
 
+    # ===========================================================================
+    # ========================   SCAN FOR FILE HEADERS   ========================
+    # ===========================================================================
+    #
+    #   1. Signatures   Loads the magic bytes from data.signatures.psd1.
+    #   2. Scan         Quick reads the sample offsets, Deep the whole disk.
+    #   3. Result       Returns the found types, most frequent first.
+    #
+
+    # ---------------------------------------------------------------------------
     # Signatures
+    #   Loads the magic bytes from data.signatures.psd1.
+    # ---------------------------------------------------------------------------
+
     $Signatures = (Import-PowerShellDataFile -Path (Join-Path -Path $PSScriptRoot -ChildPath 'data.signatures.psd1')).Signatures
     # The leading ',' keeps every byte array whole, the pipeline would unroll it into single bytes.
     $Magics     = [System.Byte[][]] @($Signatures | ForEach-Object { , [System.Convert]::FromHexString($_.Magic) })
@@ -95,7 +119,11 @@ function Find-TabulaRasaFileSignature {
         }
     }
 
+    # ---------------------------------------------------------------------------
     # Scan
+    #   Quick reads the sample offsets, Deep the whole disk.
+    # ---------------------------------------------------------------------------
+
     # > Quick   one read per sample offset
     # > Deep    sequential reads from 0 to the end
     $SampleOffsets = $Mode -EQ 'Quick' ? (Get-TabulaRasaSampleOffset -SizeBytes $SizeBytes -BlockSize $QUICK_BLOCK_SIZE -SampleCount $QUICK_SAMPLE_COUNT) : @()
@@ -149,7 +177,11 @@ function Find-TabulaRasaFileSignature {
         $stream.Dispose()
     }
 
+    # ---------------------------------------------------------------------------
     # Result
+    #   Returns the found types, most frequent first.
+    # ---------------------------------------------------------------------------
+
     $Hits = @(& $getHits | Sort-Object -Property Count -Descending)
     Write-Verbose "[Find-TabulaRasaFileSignature] '$Path' ($Mode): $($Hits.Count) types found in $BytesScanned bytes."
 

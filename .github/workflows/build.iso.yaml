@@ -13,7 +13,7 @@
 
 #
 #   Chapters:
-#     TEST, BUILD AND RELEASE   Pester and PSScriptAnalyzer, live-build, the release on tags.
+#     BUILD AND RELEASE THE ISO   Pester and PSScriptAnalyzer, live-build, the release on tags.
 #
 
 name: Build ISO
@@ -30,7 +30,7 @@ permissions:
 jobs:
 
   # ===========================================================================
-  # =======================   TEST, BUILD AND RELEASE   =======================
+  # ======================   BUILD AND RELEASE THE ISO   ======================
   # ===========================================================================
   #
   #   1. Test      Runs PSScriptAnalyzer and the Pester tests of both modules.

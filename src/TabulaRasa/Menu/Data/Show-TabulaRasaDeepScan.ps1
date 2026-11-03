@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: PwshSpectreConsole, an interactive console, Linux and root to read the disk.
+#
+#   Show-TabulaRasaDeepScan -Disk (Get-TabulaRasaDisk | Select-Object -First 1)
+
 function Show-TabulaRasaDeepScan {
     <#
     .SYNOPSIS

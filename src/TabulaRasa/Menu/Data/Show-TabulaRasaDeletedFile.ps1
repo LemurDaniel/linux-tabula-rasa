@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: PwshSpectreConsole, an interactive console, Linux, root and sleuthkit (fls).
+#
+#   Show-TabulaRasaDeletedFile -Disk (Get-TabulaRasaDisk | Select-Object -First 1)
+
 function Show-TabulaRasaDeletedFile {
     <#
     .SYNOPSIS

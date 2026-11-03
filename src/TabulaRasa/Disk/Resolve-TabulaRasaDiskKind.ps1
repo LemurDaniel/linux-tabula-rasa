@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, pure mapping.
+#
+#   Resolve-TabulaRasaDiskKind -Name sda -Transport sata -IsRotational $false
+
 function Resolve-TabulaRasaDiskKind {
     <#
     .SYNOPSIS

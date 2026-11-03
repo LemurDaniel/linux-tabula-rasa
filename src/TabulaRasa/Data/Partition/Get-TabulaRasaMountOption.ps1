@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, a static table.
+#
+#   (Get-TabulaRasaMountOption)['ext4']
+
 function Get-TabulaRasaMountOption {
     <#
     .SYNOPSIS

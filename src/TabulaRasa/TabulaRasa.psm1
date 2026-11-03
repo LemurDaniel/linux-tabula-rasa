@@ -33,8 +33,16 @@ if ($null -EQ ('TabulaRasa.SignatureScanner' -as [System.Type])) {
 . $PSScriptRoot/Data/Signature/Find-TabulaRasaFileSignature.ps1
 . $PSScriptRoot/Data/Sample/Get-TabulaRasaDataOverview.ps1
 
-# Wipe
+# Wipe: plan, preparation, the three methods and the flow
 . $PSScriptRoot/Wipe/Resolve-TabulaRasaWipeMethod.ps1
+. $PSScriptRoot/Wipe/Initialize-TabulaRasaWipeTarget.ps1
+. $PSScriptRoot/Wipe/Wait-TabulaRasaProcess.ps1
+. $PSScriptRoot/Wipe/Overwrite/Invoke-TabulaRasaOverwrite.ps1
+. $PSScriptRoot/Wipe/Ata/ConvertFrom-TabulaRasaHdparmSecurity.ps1
+. $PSScriptRoot/Wipe/Ata/Invoke-TabulaRasaAtaSecureErase.ps1
+. $PSScriptRoot/Wipe/Nvme/ConvertFrom-TabulaRasaNvmeController.ps1
+. $PSScriptRoot/Wipe/Nvme/ConvertFrom-TabulaRasaNvmeSanitizeLog.ps1
+. $PSScriptRoot/Wipe/Nvme/Invoke-TabulaRasaNvmeSanitize.ps1
 . $PSScriptRoot/Wipe/Invoke-TabulaRasaWipe.ps1
 
 # Menu

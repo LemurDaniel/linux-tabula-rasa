@@ -8,7 +8,7 @@
 #   Mounts:
 #     /src      The repository (live-build config and modules).
 #     /config   Build-time settings from Build-TabulaRasaIso.ps1 (hotspot.json).
-#     /out      Receives the ISO.
+#     /out      Receives the ISO and packages-by-size.txt (installed packages, largest first, in KiB).
 
 FROM debian:trixie
 
@@ -22,13 +22,14 @@ WORKDIR /build
 # 2. chmod: a checkout on Windows loses the executable bit of auto/config and the hooks.
 # 3. Ships both modules under /opt/tabula-rasa and the build-time settings under /etc/tabula-rasa.
 # 4. Builds and hands the ISO to /out.
+# 5. Writes the size report from the chroot that went into the image.
 CMD set -e; \
     cp -a /src/live/. /build/; \
     chmod +x /build/auto/* /build/config/hooks/live/*; \
     mkdir -p /build/config/includes.chroot/opt/tabula-rasa /build/config/includes.chroot/etc/tabula-rasa; \
-    cp -a /src/src/TabulaRasa /src/src/TabulaRasaWeb /build/config/includes.chroot/opt/tabula-rasa/; \
-    rm -rf /build/config/includes.chroot/opt/tabula-rasa/*/tests; \
+    cp -a /src/src/TabulaRasa /src/src/TabulaRasa.Web /build/config/includes.chroot/opt/tabula-rasa/; \
     cp /config/hotspot.json /build/config/includes.chroot/etc/tabula-rasa/hotspot.json; \
     lb config; \
     lb build; \
-    cp /build/*.iso /out/
+    cp /build/*.iso /out/; \
+    chroot /build/chroot dpkg-query -W -f '${Installed-Size}\t${Package}\n' | sort -rn > /out/packages-by-size.txt

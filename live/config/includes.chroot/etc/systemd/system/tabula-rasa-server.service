@@ -4,7 +4,7 @@ Description=Tabula Rasa web server
 After=network.target
 
 [Service]
-ExecStart=/usr/bin/pwsh -NoLogo -NoProfile -Command "Import-Module /opt/tabula-rasa/TabulaRasaWeb; Start-TabulaRasaServer"
+ExecStart=/usr/bin/pwsh -NoLogo -NoProfile -Command "Import-Module /opt/tabula-rasa/TabulaRasa.Web; Start-TabulaRasaServer"
 Restart=always
 RestartSec=2
 

@@ -7,6 +7,12 @@
 #     live-config.nottyautologin   Disables the default autologin of the 'user' account,
 #                                  tty2 logs in as root via the getty override in includes.chroot.
 #     live-config.hostname         The name avahi announces, the phone opens http://tabula-rasa.local/.
+#
+#   Size (the defaults of live-build would add about half a gigabyte):
+#     --firmware-chroot/-binary false   Not every firmware package, only the Wi-Fi ones from the package list.
+#     --apt-recommends false            No recommended packages, the needed ones are listed explicitly.
+#     --apt-indices false               No apt package lists in the image, the live system never installs.
+#     --chroot-squashfs-compression-*   xz, smaller than the default at the cost of a slower build.
 
 set -e
 
@@ -18,6 +24,12 @@ lb config noauto \
     --uefi-secure-boot enable \
     --debian-installer none \
     --memtest none \
+    --firmware-chroot false \
+    --firmware-binary false \
+    --apt-recommends false \
+    --apt-indices false \
+    --apt-source-archives false \
+    --chroot-squashfs-compression-type xz \
     --image-name linux-tabula-rasa \
     --iso-application "Linux Tabula Rasa" \
     --iso-volume "TABULA_RASA" \

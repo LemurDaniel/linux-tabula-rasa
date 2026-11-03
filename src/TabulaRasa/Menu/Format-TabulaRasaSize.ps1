@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, pure formatting.
+#
+#   Format-TabulaRasaSize -Bytes 500107862016
+
 function Format-TabulaRasaSize {
     <#
     .SYNOPSIS

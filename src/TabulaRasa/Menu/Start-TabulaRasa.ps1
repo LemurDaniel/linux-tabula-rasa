@@ -1,3 +1,14 @@
+# NOTE:
+#   Requires: PwshSpectreConsole, an interactive console, Linux, root and systemd (reboot, power off).
+#
+#   Import-Module /opt/tabula-rasa/TabulaRasa
+#   Start-TabulaRasa
+
+#
+#   Chapters:
+#     RUN DISK MENU   Lists the disks and opens the menu of the selected one.
+#
+
 function Start-TabulaRasa {
     <#
     .SYNOPSIS
@@ -20,6 +31,20 @@ function Start-TabulaRasa {
     param ()
 
     $TITLE = 'Tabula Rasa'
+
+    # ===========================================================================
+    # ============================   RUN DISK MENU   ============================
+    # ===========================================================================
+    #
+    #   1. Menu loop   Lists the disks and opens the menu of the selected one,
+    #                  until the user reboots or powers off.
+    #
+
+    # ---------------------------------------------------------------------------
+    # Menu loop
+    #   Lists the disks and opens the menu of the selected one,
+    #   until the user reboots or powers off.
+    # ---------------------------------------------------------------------------
 
     :MENU while ($true) {
         Clear-Host

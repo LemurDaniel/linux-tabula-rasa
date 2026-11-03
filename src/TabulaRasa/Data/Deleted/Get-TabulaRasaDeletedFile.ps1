@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: Linux, root, sleuthkit (fls).
+#
+#   (Get-TabulaRasaDeletedFile -Path /dev/sdb1).Files | Select-Object -First 20
+
 function Get-TabulaRasaDeletedFile {
     <#
     .SYNOPSIS

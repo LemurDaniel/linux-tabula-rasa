@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, pure parsing of the lsblk JSON.
+#
+#   lsblk --json --bytes --output NAME,PATH,TYPE,SIZE,FSTYPE,LABEL /dev/sdb | ConvertFrom-TabulaRasaPartitionLsblk
+
 function ConvertFrom-TabulaRasaPartitionLsblk {
     <#
     .SYNOPSIS

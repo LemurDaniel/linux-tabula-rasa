@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: Linux, findmnt and lsblk (util-linux), a system booted by live-boot.
+#
+#   Get-TabulaRasaBootDisk
+
 function Get-TabulaRasaBootDisk {
     <#
     .SYNOPSIS

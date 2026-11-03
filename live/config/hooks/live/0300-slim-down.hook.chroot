@@ -1,0 +1,14 @@
+#!/bin/sh
+# NOTE:
+#   live-build runs this hook inside the chroot during 'lb build', so it stays in shell.
+#   Removes what the base system brought before the dpkg excludes in includes.chroot_before_packages
+#   took effect: docs (copyright files stay), man pages, foreign translations and the apt cache.
+
+set -e
+
+find /usr/share/doc -mindepth 1 ! -type d ! -name copyright -delete
+find /usr/share/doc -mindepth 1 -type d -empty -delete
+rm -rf /usr/share/man/* /usr/share/info/* /usr/share/lintian/*
+find /usr/share/locale -mindepth 1 -maxdepth 1 ! -name 'en*' ! -name locale.alias -exec rm -rf {} +
+apt-get clean
+rm -rf /var/lib/apt/lists/* /var/cache/apt/*.bin

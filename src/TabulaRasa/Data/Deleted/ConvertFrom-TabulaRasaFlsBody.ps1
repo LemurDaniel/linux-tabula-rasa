@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, pure parsing of fls body lines.
+#
+#   fls -r -d -m / /dev/sdb1 | ConvertFrom-TabulaRasaFlsBody
+
 function ConvertFrom-TabulaRasaFlsBody {
     <#
     .SYNOPSIS

@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: PwshSpectreConsole, an interactive console, Linux and root to mount the partition.
+#
+#   Show-TabulaRasaFileBrowser -Disk (Get-TabulaRasaDisk | Select-Object -First 1)
+
 function Show-TabulaRasaFileBrowser {
     <#
     .SYNOPSIS

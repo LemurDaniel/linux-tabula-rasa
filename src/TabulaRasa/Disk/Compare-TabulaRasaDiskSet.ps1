@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: nothing, pure comparison of two disk lists.
+#
+#   (Compare-TabulaRasaDiskSet -Before $before -After (Get-TabulaRasaDisk)).Added
+
 function Compare-TabulaRasaDiskSet {
     <#
     .SYNOPSIS

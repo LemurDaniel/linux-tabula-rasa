@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: Linux, lsblk and blkid (util-linux), root for the blkid probe.
+#
+#   Get-TabulaRasaPartition -Path /dev/sdb
+
 function Get-TabulaRasaPartition {
     <#
     .SYNOPSIS

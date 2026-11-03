@@ -1,3 +1,8 @@
+# NOTE:
+#   Requires: PwshSpectreConsole, an interactive console, Linux and root for the data views and the wipe.
+#
+#   Show-TabulaRasaDiskMenu -Disk (Get-TabulaRasaDisk | Select-Object -First 1)
+
 function Show-TabulaRasaDiskMenu {
     <#
     .SYNOPSIS
