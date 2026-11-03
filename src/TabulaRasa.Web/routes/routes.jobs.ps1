@@ -38,7 +38,8 @@ Add-PodeRoute -Method Post -Path '/api/jobs' -ScriptBlock {
         return
     }
     if ($type -EQ 'Wipe') {
-        # The serial is the confirmation, see Resolve-TabulaRasaWipeMethod. USB and SD go through /api/replug.
+        # The browser sends the serial it showed: a different disk under the same name (swapped
+        # in the meantime) is refused. USB and SD go through /api/replug.
         $wipeInfo = Resolve-TabulaRasaWipeMethod -Kind $Disk.Kind
         if ($wipeInfo.Confirmation -NE 'Serial') {
             Write-TabulaRasaWebError -StatusCode 400 -Message "Disk '$($Disk.Name)' is confirmed by replugging, use /api/replug."
@@ -46,7 +47,7 @@ Add-PodeRoute -Method Post -Path '/api/jobs' -ScriptBlock {
         }
         $confirmToken = [System.String]::IsNullOrEmpty($Disk.Serial) ? $Disk.Path : $Disk.Serial
         if ([System.String] $Request.serial -CNE $confirmToken) {
-            Write-TabulaRasaWebError -StatusCode 403 -Message 'The serial does not match the disk, nothing was wiped.'
+            Write-TabulaRasaWebError -StatusCode 409 -Message 'The disk changed since the page showed it, nothing was wiped. Reload the disks.'
             return
         }
     }

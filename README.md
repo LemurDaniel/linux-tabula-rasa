@@ -139,7 +139,8 @@ tty2   Text menu (PwshSpectreConsole), also the fallback without a GPU
    | Deep scan | File headers (JPEG, PDF, ZIP, ...) on the whole disk, also after a quick format | Signature scan, ~1.4 GB/s |
 
 5. The wipe only starts after a confirmation of exactly that disk. Nothing is ever wiped automatically:
-   - HDD, SSD, NVMe: type the serial number from the label.
+   - HDD, SSD, NVMe: model, size and serial are shown, you confirm them (no need to open the case for the label).
+     A disk swapped in the meantime under the same name is refused.
    - USB stick, SD card: unplug it and plug it in again (their serial is rarely printed or real).
 
 `Alt+F2` switches to the text menu, `Alt+F1` back to the kiosk. When the kiosk cannot start (no GPU),

@@ -17,7 +17,8 @@ function Resolve-TabulaRasaWipeMethod {
         > Unknown         Overwrite, with the same warning.
 
         Confirmation:
-        - Serial   HDDs, SSDs and NVMe drives carry their serial on the label, the user types it.
+        - Serial   HDDs, SSDs and NVMe drives report a real serial. Model, size and serial are shown
+                   and the user confirms them, nobody has to open the case to read the label.
         - Replug   USB sticks and SD cards rarely show a serial (or a fake one), the user unplugs
                    and plugs in the device instead, which selects it physically.
 

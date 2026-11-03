@@ -15,7 +15,9 @@ function Show-TabulaRasaWipeDialog {
 
     .DESCRIPTION
         Shows the wipe plan, then confirms the disk the way Resolve-TabulaRasaWipeMethod says:
-        > Serial   The user types the serial from the label (the device path when there is none).
+        > Serial   Model, size and serial are shown, the user confirms with yes (default no).
+                   Nobody has to open the case to read the label. Right before the wipe the disk
+                   is looked up again: a different disk under the same name cancels the wipe.
         > Replug   The user unplugs the device and plugs it in again. The device that shows up
                    is the one wiped, it may come back under a new name (sdc -> sdd).
 
@@ -46,7 +48,7 @@ function Show-TabulaRasaWipeDialog {
     # ===========================================================================
     #
     #   1. Plan                  Shows the wipe plan and the warning of the method.
-    #   2. Serial confirmation   Asks for the serial from the label when the confirmation is Serial.
+    #   2. Serial confirmation   Shows the serial and asks yes or no when the confirmation is Serial.
     #   3. Replug confirmation   Waits for unplug and plug in when the confirmation is Replug.
     #   4. Wipe                  Runs the wipe with a progress bar,
     #                            estimated for ATA Secure Erase, which reports none.
@@ -76,20 +78,27 @@ function Show-TabulaRasaWipeDialog {
 
     # ---------------------------------------------------------------------------
     # Serial confirmation
-    #   Asks for the serial from the label when the confirmation is Serial.
+    #   Shows the serial and asks yes or no when the confirmation is Serial.
     # ---------------------------------------------------------------------------
 
     if ($WipeInfo.Confirmation -EQ 'Serial') {
-        $ConfirmToken = [System.String]::IsNullOrEmpty($Disk.Serial) ? $Disk.Path : $Disk.Serial
-        $answer       = Read-SpectreText -Message "Type [red]$(Get-SpectreEscapedText -Text $ConfirmToken)[/] to wipe this disk, anything else cancels" -AllowEmpty
-
-        if ($answer -CNE $ConfirmToken) {
-            Write-Verbose "[Show-TabulaRasaWipeDialog] Serial did not match -> nothing wiped."
+        $serial = [System.String]::IsNullOrEmpty($Disk.Serial) ? 'no serial' : $Disk.Serial
+        $prompt = Get-SpectreEscapedText -Text "Wipe $($Disk.Model) ($(Format-TabulaRasaSize -Bytes $Disk.SizeBytes), serial $serial) for good?"
+        if (-NOT (Read-SpectreConfirm -Message "[red]$prompt[/]" -DefaultAnswer 'n')) {
             Write-SpectreHost -Message '[grey]Cancelled, nothing was wiped.[/]'
             Read-SpectrePause
             return
         }
-        $Target = $Disk
+
+        # The disk may have been swapped while the question was open: same name, other serial.
+        $current = Get-TabulaRasaDisk | Where-Object -Property Name -CEQ -Value $Disk.Name
+        if ($null -EQ $current -OR $current.Serial -CNE $Disk.Serial) {
+            Write-Verbose "[Show-TabulaRasaWipeDialog] '$($Disk.Name)' is gone or now another disk -> nothing wiped."
+            Write-SpectreHost -Message '[yellow]The disk changed while the question was open, nothing was wiped.[/]'
+            Read-SpectrePause
+            return
+        }
+        $Target = $current
     }
 
     # ---------------------------------------------------------------------------

@@ -1,6 +1,7 @@
 // NOTE:
 //   Wipe tab. Confirms the disk the way the server says (disk.Wipe.Confirmation):
-//   > Serial   Type the serial from the label, the server compares it.
+//   > Serial   Model, size and serial are shown, a checkbox unlocks the wipe button. The shown
+//              serial goes along, the server refuses the wipe when the disk under that name changed.
 //   > Replug   Unplug the device and plug it in again, the device that comes back is wiped.
 
 //
@@ -20,7 +21,7 @@ const REPLUG_POLL_MS = 1000
 //
 //   renderPlan      Method, confirmation and the warning of the disk kind.
 //   showJob         Starts or follows the wipe job with progress, shows the check.
-//   renderSerial    Serial input and the wipe button.
+//   renderSerial    The disk with its serial, the checkbox and the wipe button.
 //   runReplug       Steps of the replug, then the final button.
 //   render          Plan plus the fitting confirmation.
 //
@@ -31,7 +32,7 @@ function renderPlan(disk) {
         <div class="card danger">
             <h2>Wipe plan</h2>
             <p>Method: <strong>${esc(wipe.Method)}</strong></p>
-            <p>Confirmation: <strong>${wipe.Confirmation === 'Serial' ? 'type the serial from the label' : 'unplug and plug in again'}</strong></p>
+            <p>Confirmation: <strong>${wipe.Confirmation === 'Serial' ? 'check model, size and serial' : 'unplug and plug in again'}</strong></p>
             ${null != wipe.Warning ? `<div class="notice">${esc(wipe.Warning)}</div>` : ''}
         </div>`
 }
@@ -68,12 +69,16 @@ async function showJob({ app, el, navId, body, id }) {
 }
 
 function renderSerial(disk) {
-    const token = disk.Serial || disk.Path
     return `
         <div class="card">
-            <p>Type <strong class="mono">${esc(token)}</strong> to wipe this disk. Compare it with the label on the disk.</p>
-            <input type="text" id="serial" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="${esc(disk.Serial ? 'Serial number' : 'Device path')}">
-            <div style="margin-top:10px"><button class="danger block" id="wipe" disabled>Wipe ${esc(formatSize(disk.SizeBytes))} for good</button></div>
+            <table>
+                <tr><th>Model</th><td>${esc(disk.Model || disk.Name)}</td></tr>
+                <tr><th>Size</th><td>${esc(formatSize(disk.SizeBytes))}</td></tr>
+                <tr><th>Serial</th><td class="mono"><strong>${esc(disk.Serial || 'no serial')}</strong></td></tr>
+                <tr><th>Device</th><td class="mono">${esc(disk.Path)}</td></tr>
+            </table>
+            <label class="check"><input type="checkbox" id="confirm-disk"> This is the disk I want to wipe, everything on it is lost.</label>
+            <button class="danger block" id="wipe" disabled>Wipe ${esc(formatSize(disk.SizeBytes))} for good</button>
         </div>`
 }
 
@@ -137,16 +142,19 @@ async function render({ app, disk, el, navId }) {
     const flow = el.querySelector('#flow')
 
     if (isSerial) {
-        const input = el.querySelector('#serial')
+        const checkbox = el.querySelector('#confirm-disk')
         const button = el.querySelector('#wipe')
-        input.addEventListener('input', () => { button.disabled = input.value.trim() === '' })
+        checkbox.addEventListener('change', () => { button.disabled = !checkbox.checked })
         button.addEventListener('click', async () => {
             button.disabled = true
+            checkbox.disabled = true
             try {
-                await showJob({ app, el: flow, navId, body: { type: 'Wipe', disk: disk.Name, serial: input.value.trim() } })
+                // The shown serial (or the path without one) lets the server spot a swapped disk.
+                await showJob({ app, el: flow, navId, body: { type: 'Wipe', disk: disk.Name, serial: disk.Serial || disk.Path } })
             } catch (exception) {
                 flow.innerHTML = `<div class="notice error">${esc(exception.message)}</div>`
                 button.disabled = false
+                checkbox.disabled = false
             }
         })
         return
