@@ -65,7 +65,37 @@ Requires Docker (Docker Desktop on Windows) with privileged containers.
 ./build/Build-TabulaRasaIso.ps1 -HotspotSsid 'Wiper' -HotspotPassword 'not-my-wifi-password'
 ```
 
-The ISO lands in `out/`. Write it to a USB stick with Rufus (DD mode), balenaEtcher or `dd`.
+The ISO lands in `out/`.
+
+### Write a stick
+Windows (elevated PowerShell 7):
+```powershell
+./build/Write-TabulaRasaStick.ps1 -FromRelease
+```
+
+Linux:
+```bash
+./build/write-tabula-rasa-stick.sh --from-release
+```
+
+| Source of the ISO | Windows | Linux |
+| --- | --- | --- |
+| Newest GitHub release, checked against `SHA256SUMS` | `-FromRelease` | `--from-release` |
+| Build it now with Docker | `-Build` | `--build` |
+| A file | `-IsoPath <file>` | `--iso <file>` |
+| Newest ISO in `out/` | (default) | (default) |
+
+Both list the USB disks, want the disk number or device path typed, write the ISO and read it back to verify.
+The repository is private, so `-FromRelease` needs the [GitHub CLI](https://cli.github.com/) logged in (`gh auth login`).
+Rufus (DD mode) or balenaEtcher work too.
+
+### Releases
+A tag `v*` builds the ISO on GitHub Actions and publishes it as release
+(`linux-tabula-rasa-<tag>-amd64.iso` plus `SHA256SUMS`):
+
+```bash
+git tag v0.1.0 && git push --tags
+```
 The hotspot password is stored in plain text on the stick and shown on the kiosk, so pick one you use nowhere else.
 GitHub Actions builds it too: run **Build ISO** manually or push a `v*` tag, the ISO is attached as artifact.
 

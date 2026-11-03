@@ -166,7 +166,13 @@ Describe 'Get-TabulaRasaDirectory' -Skip:(-NOT $IsLinux) {
         $MountPoint = Join-Path -Path $TestDrive -ChildPath 'mnt'
         $null = New-Item -ItemType Directory -Path "$MountPoint/Users/x" -Force
         Set-Content -Path "$MountPoint/readme.txt" -Value 'hello'
-        $null = New-Item -ItemType SymbolicLink -Path "$MountPoint/escape" -Target '/etc'
+
+        # The link leaves the mount point, but stays inside the TestDrive: Pester follows links
+        # when it cleans up, a link to /etc would make it walk (or as root even delete) /etc.
+        $Outside = Join-Path -Path $TestDrive -ChildPath 'outside'
+        $null = New-Item -ItemType Directory -Path $Outside
+        Set-Content -Path "$Outside/secret.txt" -Value 'not reachable'
+        $null = New-Item -ItemType SymbolicLink -Path "$MountPoint/escape" -Target $Outside
     }
 
     It 'lists folders first and marks links' {

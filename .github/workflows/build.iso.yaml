@@ -1,17 +1,19 @@
 # ---------------------------------------------------------------------------
 # Build ISO
-#   Tests the menu module, then builds the live ISO and publishes it as an artifact.
+#   Tests both modules, builds the live ISO and publishes it as an artifact.
+#   A tag v* also creates a GitHub release with the ISO and SHA256SUMS,
+#   which Write-TabulaRasaStick.ps1 -FromRelease / --from-release downloads.
 #
 #   Triggers:
-#     workflow_dispatch   Manual build from the Actions tab.
+#     workflow_dispatch   Manual build from the Actions tab (artifact only).
 #     push of a tag v*    Release build, e.g. 'git tag v0.1.0 && git push --tags'.
 #
-#   No secrets needed, the ISO is only published as a workflow artifact.
+#   No extra secrets: the release job uses the GITHUB_TOKEN with contents: write.
 # ---------------------------------------------------------------------------
 
 #
 #   Chapters:
-#     TEST AND BUILD   Pester and PSScriptAnalyzer, then live-build.
+#     TEST, BUILD AND RELEASE   Pester and PSScriptAnalyzer, live-build, the release on tags.
 #
 
 name: Build ISO
@@ -28,16 +30,17 @@ permissions:
 jobs:
 
   # ===========================================================================
-  # ============================   TEST AND BUILD   ===========================
+  # =======================   TEST, BUILD AND RELEASE   =======================
   # ===========================================================================
   #
-  #   1. Test    Runs PSScriptAnalyzer and the Pester tests of the module.
-  #   2. Build   Builds the ISO with live-build in docker, only after the tests passed.
+  #   1. Test      Runs PSScriptAnalyzer and the Pester tests of both modules.
+  #   2. Build     Builds the ISO with live-build in docker, only after the tests passed.
+  #   3. Release   On a v* tag: publishes the ISO and its checksum as GitHub release.
   #
 
   # ---------------------------------------------------------------------------
   # Test
-  #   Runs PSScriptAnalyzer and the Pester tests of the module.
+  #   Runs PSScriptAnalyzer and the Pester tests of both modules.
   # ---------------------------------------------------------------------------
   test:
     runs-on: ubuntu-latest
@@ -84,3 +87,43 @@ jobs:
           name: linux-tabula-rasa-iso
           path: out/*.iso
           if-no-files-found: error
+
+  # ---------------------------------------------------------------------------
+  # Release
+  #   On a v* tag: publishes the ISO and its checksum as GitHub release.
+  # ---------------------------------------------------------------------------
+  release:
+    needs: build
+    if: startsWith(github.ref, 'refs/tags/v')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write   # gh release create
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: linux-tabula-rasa-iso
+          path: out
+
+      - name: Create release
+        shell: pwsh
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          TAG: ${{ github.ref_name }}
+        run: |
+          Set-StrictMode -Version 1.0
+          $ErrorActionPreference = 'Stop'
+
+          # 'linux-tabula-rasa-amd64.hybrid.iso' => 'linux-tabula-rasa-v0.1.0-amd64.iso'
+          $Iso     = Get-ChildItem -Path ./out -Filter '*.iso' | Select-Object -First 1
+          $IsoName = "linux-tabula-rasa-$($env:TAG)-amd64.iso"
+          Move-Item -Path $Iso.FullName -Destination "./out/$IsoName"
+
+          # SHA256SUMS in the format of sha256sum: '<hash>  <file>'.
+          $Hash = (Get-FileHash -Path "./out/$IsoName" -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$Hash  $IsoName" | Set-Content -Path ./out/SHA256SUMS -Encoding utf8NoBOM
+
+          gh release create $env:TAG "./out/$IsoName" ./out/SHA256SUMS --title "Linux Tabula Rasa $($env:TAG)" --generate-notes
+          if ($LASTEXITCODE -NE 0) {
+              throw [System.InvalidOperationException]::new("gh release create must succeed, got exit code $LASTEXITCODE.")
+          }
