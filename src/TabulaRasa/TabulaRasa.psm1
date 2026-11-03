@@ -31,6 +31,7 @@ if ($null -EQ ('TabulaRasa.SignatureScanner' -as [System.Type])) {
 . $PSScriptRoot/Data/Deleted/ConvertFrom-TabulaRasaFlsBody.ps1
 . $PSScriptRoot/Data/Deleted/Get-TabulaRasaDeletedFile.ps1
 . $PSScriptRoot/Data/Signature/Find-TabulaRasaFileSignature.ps1
+. $PSScriptRoot/Data/Sample/Get-TabulaRasaDataOverview.ps1
 
 # Wipe
 . $PSScriptRoot/Wipe/Resolve-TabulaRasaWipeMethod.ps1
@@ -59,6 +60,7 @@ Export-ModuleMember -Function @(
     'Get-TabulaRasaDirectory'
     'Get-TabulaRasaDeletedFile'
     'Find-TabulaRasaFileSignature'
+    'Get-TabulaRasaDataOverview'
     # Wipe
     'Resolve-TabulaRasaWipeMethod'
     'Invoke-TabulaRasaWipe'

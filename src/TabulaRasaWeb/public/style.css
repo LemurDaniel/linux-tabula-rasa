@@ -1,0 +1,203 @@
+/* NOTE:
+     Styles of the Tabula Rasa web UI. Mobile first, one dark theme for kiosk and phone.
+*/
+
+:root {
+    --bg: #111318;
+    --surface: #1b1e26;
+    --surface-2: #252935;
+    --border: #2f3442;
+    --text: #e8e8ea;
+    --muted: #9aa0ad;
+    --accent: #ff8a3d;
+    --danger: #ff4d4f;
+    --ok: #3ccf91;
+    --warn: #ffc53d;
+    --radius: 14px;
+    color-scheme: dark;
+}
+
+* { box-sizing: border-box; }
+
+body {
+    margin: 0;
+    background: var(--bg);
+    color: var(--text);
+    font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    -webkit-tap-highlight-color: transparent;
+}
+
+/* Layout */
+.topbar {
+    position: sticky;
+    top: 0;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px 16px;
+    background: rgba(17, 19, 24, 0.92);
+    backdrop-filter: blur(8px);
+    border-bottom: 1px solid var(--border);
+}
+.brand { font-weight: 700; font-size: 18px; }
+.brand span { color: var(--accent); }
+
+main {
+    max-width: 920px;
+    margin: 0 auto;
+    padding: 16px;
+}
+
+h1 { font-size: 26px; margin: 8px 0 4px; }
+h2 { font-size: 18px; margin: 20px 0 8px; }
+p { margin: 6px 0; }
+.muted { color: var(--muted); }
+.small { font-size: 13px; }
+.mono { font-family: ui-monospace, "SF Mono", Consolas, monospace; word-break: break-all; }
+
+/* Controls */
+button {
+    font: inherit;
+    font-weight: 600;
+    border: 0;
+    border-radius: 12px;
+    padding: 14px 18px;
+    min-height: 48px;
+    background: var(--surface-2);
+    color: var(--text);
+    cursor: pointer;
+}
+button:disabled { opacity: 0.45; cursor: not-allowed; }
+button.primary { background: var(--accent); color: #1a1006; }
+button.danger { background: var(--danger); color: #fff; }
+button.ghost { background: transparent; border: 1px solid var(--border); min-height: 40px; padding: 8px 14px; }
+button.block { width: 100%; }
+
+input[type="text"], select {
+    width: 100%;
+    font: inherit;
+    padding: 14px;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+}
+
+.row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; }
+.row > * { flex: 1 1 auto; }
+
+/* Cards */
+.card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 16px;
+    margin: 12px 0;
+}
+.card > h2:first-child { margin-top: 0; }
+.card.clickable { cursor: pointer; transition: border-color 0.15s; }
+.card.clickable:hover, .card.clickable:focus-visible { border-color: var(--accent); outline: none; }
+.card.danger { border-color: var(--danger); }
+
+.disk-head { display: flex; gap: 14px; align-items: center; }
+.disk-icon { font-size: 34px; }
+.disk-title { font-weight: 700; }
+
+.badge {
+    display: inline-block;
+    padding: 2px 10px;
+    border-radius: 999px;
+    font-size: 12px;
+    font-weight: 700;
+    background: var(--surface-2);
+    color: var(--muted);
+    margin: 6px 6px 0 0;
+}
+.badge.ok { color: var(--ok); }
+.badge.warn { color: var(--warn); }
+.badge.danger { color: var(--danger); }
+
+.notice { padding: 12px 14px; border-radius: 12px; background: rgba(255, 197, 61, 0.12); color: var(--warn); margin: 10px 0; }
+.notice.error { background: rgba(255, 77, 79, 0.12); color: var(--danger); }
+.notice.ok { background: rgba(60, 207, 145, 0.12); color: var(--ok); }
+
+/* Tabs */
+.tabs { display: flex; gap: 6px; overflow-x: auto; margin: 12px 0; padding-bottom: 4px; }
+.tabs button { flex: 0 0 auto; min-height: 40px; padding: 8px 14px; background: var(--surface); border: 1px solid var(--border); }
+.tabs button.active { border-color: var(--accent); color: var(--accent); }
+.tabs button.tab-danger.active { border-color: var(--danger); color: var(--danger); }
+
+/* Lists and tables */
+.list { list-style: none; margin: 0; padding: 0; }
+.list li {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px 4px;
+    border-bottom: 1px solid var(--border);
+}
+.list li.folder { cursor: pointer; color: #7fb4ff; }
+.list li .meta { color: var(--muted); font-size: 13px; white-space: nowrap; }
+.list li .name { overflow-wrap: anywhere; }
+
+table { width: 100%; border-collapse: collapse; font-size: 14px; }
+th, td { text-align: left; padding: 8px 6px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; }
+.table-wrap { overflow-x: auto; }
+
+.breadcrumb { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+.breadcrumb button { min-height: 32px; padding: 4px 10px; font-size: 14px; }
+
+/* Charts and progress */
+.bars { display: grid; gap: 8px; }
+.bar { display: grid; grid-template-columns: minmax(110px, 38%) 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
+.bar-track { height: 12px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+
+.progress { height: 14px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 10px 0; }
+.progress > div { height: 100%; background: var(--accent); transition: width 0.4s; }
+
+.spinner {
+    width: 22px; height: 22px;
+    border: 3px solid var(--surface-2);
+    border-top-color: var(--accent);
+    border-radius: 50%;
+    animation: spin 0.8s linear infinite;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 8px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Start screen */
+.start { text-align: center; padding-top: 24px; }
+.start .hero { font-size: 64px; }
+.qr-grid { display: grid; gap: 16px; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); margin: 20px 0; }
+.qr { background: #fff; border-radius: var(--radius); padding: 12px; }
+.qr img { width: 100%; max-width: 260px; display: block; margin: 0 auto; }
+.qr-caption { color: #222; font-weight: 600; margin-top: 6px; word-break: break-all; }
+
+/* Steps of the replug */
+.steps { list-style: none; padding: 0; margin: 12px 0; }
+.steps li { padding: 12px 14px; border-radius: 12px; background: var(--surface-2); margin: 8px 0; color: var(--muted); }
+.steps li.active { color: var(--text); outline: 2px solid var(--accent); }
+.steps li.done { color: var(--ok); }
+
+.toast {
+    position: fixed;
+    left: 50%;
+    bottom: 20px;
+    transform: translateX(-50%);
+    max-width: calc(100% - 32px);
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+    padding: 12px 16px;
+    border-radius: 12px;
+    z-index: 20;
+}
+
+@media (min-width: 720px) {
+    main { padding: 24px; }
+    h1 { font-size: 32px; }
+}

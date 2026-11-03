@@ -18,6 +18,27 @@ ca-certificates
 curl
 libicu76
 
+# Kiosk: cage (Wayland kiosk compositor) + Chromium on tty1
+cage
+chromium
+fonts-dejavu-core
+fonts-noto-color-emoji
+
+# Network: DHCP on LAN, hotspot, mDNS (tabula-rasa.local), QR codes
+network-manager
+dnsmasq-base
+avahi-daemon
+iw
+wireless-regdb
+qrencode
+
+# Firmware for common Wi-Fi and GPU chips (non-free-firmware)
+firmware-iwlwifi
+firmware-realtek
+firmware-atheros
+firmware-misc-nonfree
+firmware-amd-graphics
+
 # Console
 console-setup
 kbd

@@ -4,9 +4,8 @@ function Show-TabulaRasaDataOverview {
         Shows what is on a disk at a glance: partitions with usage, sampled blocks and found file types.
 
     .DESCRIPTION
-        1. Partitions   Every partition with file system and label, mountable ones with used space.
-        2. Samples      How many sampled blocks are not zero (Test-TabulaRasaDiskData).
-        3. Signatures   A quick signature estimate (Find-TabulaRasaFileSignature -Mode Quick).
+        Renders Get-TabulaRasaDataOverview: a partition table, the sampled blocks and a bar chart
+        of the file headers found in the samples.
 
     .EXAMPLE
         PS> Show-TabulaRasaDataOverview -Disk (Get-TabulaRasaDisk | Select-Object -First 1)
@@ -26,41 +25,21 @@ function Show-TabulaRasaDataOverview {
     )
 
     $Overview = Invoke-SpectreCommandWithStatus -Title "Reading $($Disk.Path) ..." -Spinner Dots -ScriptBlock {
-        # Partitions, with usage for every mountable one. Unmounted again right away.
-        $partitions = foreach ($partition in @(Get-TabulaRasaPartition -Path $Disk.Path)) {
-            $used = 'n/a'
-            if ($partition.IsMountable) {
-                try {
-                    $mount = Mount-TabulaRasaPartition -Path $partition.Path -FileSystem $partition.FileSystem
-                    $used  = Format-TabulaRasaSize -Bytes $mount.UsedBytes
-                }
-                catch [System.InvalidOperationException] {
-                    # Handled: a damaged file system just shows no usage, the deep scan still works.
-                    $used = 'unreadable'
-                }
-                finally {
-                    Dismount-TabulaRasaPartition -Path $partition.Path
-                }
-            }
-            [PSCustomObject]@{
-                Partition  = $partition.Path
-                FileSystem = [System.String]::IsNullOrEmpty($partition.FileSystem) ? 'none' : $partition.FileSystem
-                Label      = $partition.Label
-                Size       = Format-TabulaRasaSize -Bytes $partition.SizeBytes
-                Used       = $used
-            }
-        }
-
-        [PSCustomObject]@{
-            Partitions = @($partitions)
-            Samples    = Test-TabulaRasaDiskData -Path $Disk.Path -SizeBytes $Disk.SizeBytes
-            Signatures = Find-TabulaRasaFileSignature -Path $Disk.Path -SizeBytes $Disk.SizeBytes -Mode Quick
-        }
+        Get-TabulaRasaDataOverview -Disk $Disk
     }
 
     # Partitions
     if ($Overview.Partitions.Count -GT 0) {
-        $Overview.Partitions | Format-SpectreTable -Title 'Partitions' -Border Rounded | Out-SpectreHost
+        $Overview.Partitions
+        | Select-Object -Property @(
+            @{ Name = 'Partition';  Expression = { $_.Path } }
+            @{ Name = 'FileSystem'; Expression = { [System.String]::IsNullOrEmpty($_.FileSystem) ? 'none' : $_.FileSystem } }
+            'Label'
+            @{ Name = 'Size';       Expression = { Format-TabulaRasaSize -Bytes $_.SizeBytes } }
+            @{ Name = 'Used';       Expression = { $null -EQ $_.UsedBytes ? $_.State : (Format-TabulaRasaSize -Bytes $_.UsedBytes) } }
+        )
+        | Format-SpectreTable -Title 'Partitions' -Border Rounded
+        | Out-SpectreHost
     }
     else {
         Write-SpectreHost -Message '[yellow]No partitions found, maybe quick formatted or never partitioned.[/]'

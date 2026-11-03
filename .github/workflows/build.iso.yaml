@@ -61,7 +61,7 @@ jobs:
           }
 
           $PesterConfig = New-PesterConfiguration
-          $PesterConfig.Run.Path = './src/TabulaRasa/tests'
+          $PesterConfig.Run.Path = './src'
           $PesterConfig.Run.Exit = $true
           Invoke-Pester -Configuration $PesterConfig
 

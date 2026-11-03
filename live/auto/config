@@ -5,7 +5,8 @@
 #
 #   Boot parameters:
 #     live-config.nottyautologin   Disables the default autologin of the 'user' account,
-#                                  tty1 logs in as root via the getty override in includes.chroot.
+#                                  tty2 logs in as root via the getty override in includes.chroot.
+#     live-config.hostname         The name avahi announces, the phone opens http://tabula-rasa.local/.
 
 set -e
 
@@ -20,5 +21,5 @@ lb config noauto \
     --image-name linux-tabula-rasa \
     --iso-application "Linux Tabula Rasa" \
     --iso-volume "TABULA_RASA" \
-    --bootappend-live "boot=live components quiet live-config.nottyautologin" \
+    --bootappend-live "boot=live components quiet live-config.nottyautologin live-config.hostname=tabula-rasa" \
     "${@}"

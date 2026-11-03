@@ -3,7 +3,12 @@
 #   Requires a privileged container, live-build mounts proc/sys inside its chroot.
 #
 #   docker build -t linux-tabula-rasa-builder ./build
-#   docker run --rm --privileged -v <REPO>:/src:ro -v <OUT>:/out linux-tabula-rasa-builder
+#   docker run --rm --privileged -v <REPO>:/src:ro -v <CONFIG>:/config:ro -v <OUT>:/out linux-tabula-rasa-builder
+#
+#   Mounts:
+#     /src      The repository (live-build config and modules).
+#     /config   Build-time settings from Build-TabulaRasaIso.ps1 (hotspot.json).
+#     /out      Receives the ISO.
 
 FROM debian:trixie
 
@@ -13,7 +18,17 @@ RUN apt-get update \
 
 WORKDIR /build
 
-# Copies the live-build config and the menu module into a fresh build tree, builds and hands the ISO to /out.
-# The module lands in includes.chroot, so the image ships it under /opt/tabula-rasa.
-# chmod: a checkout on Windows loses the executable bit of auto/config and the hooks.
-CMD ["sh", "-c", "set -e; cp -a /src/live/. /build/; chmod +x /build/auto/* /build/config/hooks/live/*; mkdir -p /build/config/includes.chroot/opt/tabula-rasa; cp -a /src/src/TabulaRasa /build/config/includes.chroot/opt/tabula-rasa/; lb config; lb build; cp /build/*.iso /out/"]
+# 1. Copies the live-build config into a fresh build tree.
+# 2. chmod: a checkout on Windows loses the executable bit of auto/config and the hooks.
+# 3. Ships both modules under /opt/tabula-rasa and the build-time settings under /etc/tabula-rasa.
+# 4. Builds and hands the ISO to /out.
+CMD set -e; \
+    cp -a /src/live/. /build/; \
+    chmod +x /build/auto/* /build/config/hooks/live/*; \
+    mkdir -p /build/config/includes.chroot/opt/tabula-rasa /build/config/includes.chroot/etc/tabula-rasa; \
+    cp -a /src/src/TabulaRasa /src/src/TabulaRasaWeb /build/config/includes.chroot/opt/tabula-rasa/; \
+    rm -rf /build/config/includes.chroot/opt/tabula-rasa/*/tests; \
+    cp /config/hotspot.json /build/config/includes.chroot/etc/tabula-rasa/hotspot.json; \
+    lb config; \
+    lb build; \
+    cp /build/*.iso /out/

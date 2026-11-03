@@ -3,10 +3,17 @@ The folder layout is the one live-build expects, the Dockerfile copies it as bui
 
 | Path | Content |
 | --- | --- |
-| `auto/config` | `lb config` options: Debian trixie, amd64, hybrid ISO, Secure Boot, boot parameters. |
-| `config/package-lists/tabula-rasa.list.chroot` | Packages of the live system: wipe tools, PowerShell runtime, console. |
-| `config/hooks/live/0100-install-pwsh.hook.chroot` | Installs pwsh (hash checked) and PwshSpectreConsole inside the chroot. |
-| `config/includes.chroot/etc/systemd/system/getty@tty1.service.d/override.conf` | Autologin of root on tty1. |
-| `config/includes.chroot/root/.bash_profile` | Starts the menu on tty1. |
+| `auto/config` | `lb config` options: Debian trixie, amd64, hybrid ISO, Secure Boot, host name, boot parameters. |
+| `config/package-lists/tabula-rasa.list.chroot` | Packages: wipe tools, sleuthkit, kiosk, NetworkManager, avahi, firmware, PowerShell runtime. |
+| `config/hooks/live/0100-install-pwsh.hook.chroot` | Installs pwsh (hash checked), PwshSpectreConsole and Pode inside the chroot. |
+| `config/hooks/live/0200-setup-services.hook.chroot` | Creates the `kiosk` user and enables the services. |
+| `config/includes.chroot/etc/systemd/system/tabula-rasa-server.service` | Pode web server on port 80 (root). |
+| `config/includes.chroot/etc/systemd/system/tabula-rasa-kiosk.service` | cage + Chromium on tty1 (user `kiosk`). |
+| `config/includes.chroot/etc/systemd/system/tabula-rasa-fallback.service` | Switches to tty2 when the kiosk fails three times. |
+| `config/includes.chroot/etc/systemd/system/tabula-rasa-hotspot.service` | Opens the hotspot when no LAN shows up within 30 seconds. |
+| `config/includes.chroot/etc/systemd/system/getty@tty2.service.d/override.conf` | Autologin of root on tty2. |
+| `config/includes.chroot/root/.bash_profile` | Starts the text menu on tty2. |
 
-The menu module (`src/TabulaRasa`) is copied to `config/includes.chroot/opt/tabula-rasa/` at build time.
+Copied in at build time by the Dockerfile:
+- `src/TabulaRasa` and `src/TabulaRasaWeb` to `/opt/tabula-rasa/` (without tests).
+- `hotspot.json` (from `Build-TabulaRasaIso.ps1 -HotspotSsid/-HotspotPassword`) to `/etc/tabula-rasa/`.

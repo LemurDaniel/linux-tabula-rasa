@@ -1,0 +1,7 @@
+# Started by tabula-rasa-kiosk when the kiosk cannot run: shows the text menu on tty2.
+[Unit]
+Description=Tabula Rasa text menu fallback
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/chvt 2

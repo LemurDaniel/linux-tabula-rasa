@@ -1,0 +1,33 @@
+# Kiosk on tty1: cage (Wayland kiosk) with Chromium on the local web UI.
+# -s keeps VT switching, so Alt+F2 reaches the text menu on tty2.
+# Three crashes within a minute (no GPU, no display) -> tabula-rasa-fallback switches to tty2.
+[Unit]
+Description=Tabula Rasa kiosk
+After=systemd-user-sessions.service tabula-rasa-server.service
+Wants=tabula-rasa-server.service
+Conflicts=getty@tty1.service
+After=getty@tty1.service
+StartLimitIntervalSec=60
+StartLimitBurst=3
+OnFailure=tabula-rasa-fallback.service
+
+[Service]
+Type=simple
+User=kiosk
+PAMName=login
+TTYPath=/dev/tty1
+TTYReset=yes
+TTYVHangup=yes
+TTYVTDisallocate=yes
+StandardInput=tty-fail
+StandardOutput=journal
+StandardError=journal
+UtmpIdentifier=tty1
+UtmpMode=user
+Environment=XDG_SESSION_TYPE=wayland
+ExecStart=/usr/bin/cage -s -- /usr/bin/chromium --kiosk --no-first-run --noerrdialogs --disable-translate --disable-features=Translate --password-store=basic --ozone-platform=wayland --app=http://localhost/
+Restart=on-failure
+RestartSec=2
+
+[Install]
+WantedBy=graphical.target

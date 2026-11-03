@@ -1,0 +1,13 @@
+# Opens the Wi-Fi hotspot at boot when no LAN cable gets connected within 30 seconds.
+[Unit]
+Description=Tabula Rasa hotspot fallback
+After=NetworkManager.service
+Wants=NetworkManager.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/pwsh -NoLogo -NoProfile -Command "Import-Module /opt/tabula-rasa/TabulaRasaWeb; Start-TabulaRasaWebHotspot -Verbose"
+
+[Install]
+WantedBy=multi-user.target

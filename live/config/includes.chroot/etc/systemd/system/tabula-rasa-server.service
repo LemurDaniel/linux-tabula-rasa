@@ -1,0 +1,12 @@
+# Pode web server: API and web UI on port 80, root for raw disk access.
+[Unit]
+Description=Tabula Rasa web server
+After=network.target
+
+[Service]
+ExecStart=/usr/bin/pwsh -NoLogo -NoProfile -Command "Import-Module /opt/tabula-rasa/TabulaRasaWeb; Start-TabulaRasaServer"
+Restart=always
+RestartSec=2
+
+[Install]
+WantedBy=multi-user.target

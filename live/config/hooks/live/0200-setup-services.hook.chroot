@@ -1,0 +1,16 @@
+#!/bin/sh
+# NOTE:
+#   live-build runs this hook inside the chroot during 'lb build', so it stays in shell.
+#   Creates the kiosk user and enables the Tabula Rasa services (units in includes.chroot).
+
+set -e
+
+# The kiosk runs Chromium as an unprivileged user, root never renders web content.
+id kiosk >/dev/null 2>&1 || useradd --create-home --shell /usr/sbin/nologin --groups video,render,input kiosk
+
+systemctl enable NetworkManager.service
+systemctl enable avahi-daemon.service
+systemctl enable tabula-rasa-server.service
+systemctl enable tabula-rasa-hotspot.service
+systemctl enable tabula-rasa-kiosk.service
+systemctl set-default graphical.target

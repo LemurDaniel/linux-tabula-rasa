@@ -2,12 +2,13 @@
 # NOTE:
 #   live-build runs this hook inside the chroot during 'lb build', so it stays in shell.
 #   Installs PowerShell from the official release tarball (checked against hashes.sha256)
-#   and the PwshSpectreConsole module for all users.
+#   and the modules PwshSpectreConsole (text menu) and Pode (web server) for all users.
 
 set -e
 
 PWSH_VERSION="7.6.8"
 SPECTRE_VERSION="2.6.3"
+PODE_VERSION="2.14.1"
 
 PWSH_ARCHIVE="powershell-${PWSH_VERSION}-linux-x64.tar.gz"
 PWSH_RELEASE_URL="https://github.com/PowerShell/PowerShell/releases/download/v${PWSH_VERSION}"
@@ -28,5 +29,16 @@ chmod +x "${PWSH_HOME}/pwsh"
 ln -sf "${PWSH_HOME}/pwsh" /usr/bin/pwsh
 rm -f "${PWSH_ARCHIVE}" hashes.sha256
 
-# Install the TUI module for all users.
-pwsh -NoLogo -NoProfile -Command "Install-PSResource -Name PwshSpectreConsole -Version ${SPECTRE_VERSION} -Scope AllUsers -TrustRepository"
+# Install the modules for all users, straight from the gallery package (a .nupkg is a zip).
+# Install-PSResource is not found inside the chroot, so no gallery client is involved.
+install_module() {
+    target="/usr/local/share/powershell/Modules/$1/$2"
+    mkdir -p "${target}"
+    curl -fsSL -o "/tmp/$1.nupkg" "https://www.powershellgallery.com/api/v2/package/$1/$2"
+    pwsh -NoLogo -NoProfile -Command "Expand-Archive -LiteralPath '/tmp/$1.nupkg' -DestinationPath '${target}' -Force"
+    rm -rf "${target}/_rels" "${target}/package" "${target}/[Content_Types].xml" "/tmp/$1.nupkg"
+    pwsh -NoLogo -NoProfile -Command "Import-Module $1 -RequiredVersion $2 -ErrorAction Stop"
+}
+
+install_module PwshSpectreConsole "${SPECTRE_VERSION}"
+install_module Pode "${PODE_VERSION}"
