@@ -1,0 +1,5 @@
+{
+  "name": "TabulaRasa",
+  "version": "0.1.0",
+  "description": "Detects disks in the Linux Tabula Rasa live system, checks them for data and wipes them with the method that fits the disk kind."
+}

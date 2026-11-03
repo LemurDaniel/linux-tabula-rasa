@@ -1,0 +1,6 @@
+# Everything ends up inside a Linux live image, so line endings are LF on every platform.
+# A CRLF in a live-build hook or a systemd unit breaks the build or the boot.
+* text=auto eol=lf
+
+*.iso binary
+*.png binary

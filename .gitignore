@@ -1,0 +1,7 @@
+# Build output of build/Build-TabulaRasaIso.ps1
+out/
+*.iso
+*.log
+
+# Test results
+testResults.xml

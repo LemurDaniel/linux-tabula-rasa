@@ -1,0 +1,27 @@
+# Live system
+live-boot
+live-config
+live-config-systemd
+
+# Wipe tools
+hdparm
+nvme-cli
+sg3-utils
+smartmontools
+util-linux
+
+# Data views: deleted files via file system metadata
+sleuthkit
+
+# PowerShell runtime (installed by hooks/live/0100-install-pwsh.hook.chroot)
+ca-certificates
+curl
+libicu76
+
+# Console
+console-setup
+kbd
+less
+locales
+pciutils
+usbutils

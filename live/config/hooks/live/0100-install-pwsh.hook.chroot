@@ -1,0 +1,32 @@
+#!/bin/sh
+# NOTE:
+#   live-build runs this hook inside the chroot during 'lb build', so it stays in shell.
+#   Installs PowerShell from the official release tarball (checked against hashes.sha256)
+#   and the PwshSpectreConsole module for all users.
+
+set -e
+
+PWSH_VERSION="7.6.8"
+SPECTRE_VERSION="2.6.3"
+
+PWSH_ARCHIVE="powershell-${PWSH_VERSION}-linux-x64.tar.gz"
+PWSH_RELEASE_URL="https://github.com/PowerShell/PowerShell/releases/download/v${PWSH_VERSION}"
+PWSH_HOME="/opt/microsoft/powershell/7"
+
+# Download and verify the release tarball.
+cd /tmp
+curl -fsSL -o "${PWSH_ARCHIVE}" "${PWSH_RELEASE_URL}/${PWSH_ARCHIVE}"
+curl -fsSL -o hashes.sha256 "${PWSH_RELEASE_URL}/hashes.sha256"
+# hashes.sha256 is UTF-16LE with CRLF and holds '<hash> *<file>' lines.
+# The '*' marks binary mode, sha256sum reads it as is.
+iconv -f UTF-16 -t UTF-8 hashes.sha256 | tr -d '\r' | grep " \*${PWSH_ARCHIVE}\$" | sha256sum -c -
+
+# Install and link pwsh.
+mkdir -p "${PWSH_HOME}"
+tar -xzf "${PWSH_ARCHIVE}" -C "${PWSH_HOME}"
+chmod +x "${PWSH_HOME}/pwsh"
+ln -sf "${PWSH_HOME}/pwsh" /usr/bin/pwsh
+rm -f "${PWSH_ARCHIVE}" hashes.sha256
+
+# Install the TUI module for all users.
+pwsh -NoLogo -NoProfile -Command "Install-PSResource -Name PwshSpectreConsole -Version ${SPECTRE_VERSION} -Scope AllUsers -TrustRepository"

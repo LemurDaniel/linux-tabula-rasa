@@ -1,0 +1,86 @@
+# ---------------------------------------------------------------------------
+# Build ISO
+#   Tests the menu module, then builds the live ISO and publishes it as an artifact.
+#
+#   Triggers:
+#     workflow_dispatch   Manual build from the Actions tab.
+#     push of a tag v*    Release build, e.g. 'git tag v0.1.0 && git push --tags'.
+#
+#   No secrets needed, the ISO is only published as a workflow artifact.
+# ---------------------------------------------------------------------------
+
+#
+#   Chapters:
+#     TEST AND BUILD   Pester and PSScriptAnalyzer, then live-build.
+#
+
+name: Build ISO
+
+on:
+  workflow_dispatch:
+  push:
+    tags:
+      - "v*"
+
+permissions:
+  contents: read
+
+jobs:
+
+  # ===========================================================================
+  # ============================   TEST AND BUILD   ===========================
+  # ===========================================================================
+  #
+  #   1. Test    Runs PSScriptAnalyzer and the Pester tests of the module.
+  #   2. Build   Builds the ISO with live-build in docker, only after the tests passed.
+  #
+
+  # ---------------------------------------------------------------------------
+  # Test
+  #   Runs PSScriptAnalyzer and the Pester tests of the module.
+  # ---------------------------------------------------------------------------
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Analyze and test
+        shell: pwsh
+        run: |
+          Set-StrictMode -Version 1.0
+          $ErrorActionPreference = 'Stop'
+
+          Install-PSResource -Name PSScriptAnalyzer, Pester -TrustRepository
+
+          $Findings = @('./src', './build') | ForEach-Object {
+              Invoke-ScriptAnalyzer -Path $_ -Recurse -Severity Warning, Error
+          }
+          if ($Findings.Count -GT 0) {
+              $Findings | Format-Table -AutoSize | Out-String | Write-Host
+              throw [System.InvalidOperationException]::new("PSScriptAnalyzer must report no findings, got $($Findings.Count).")
+          }
+
+          $PesterConfig = New-PesterConfiguration
+          $PesterConfig.Run.Path = './src/TabulaRasa/tests'
+          $PesterConfig.Run.Exit = $true
+          Invoke-Pester -Configuration $PesterConfig
+
+  # ---------------------------------------------------------------------------
+  # Build
+  #   Builds the ISO with live-build in docker, only after the tests passed.
+  # ---------------------------------------------------------------------------
+  build:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build ISO
+        shell: pwsh
+        run: ./build/Build-TabulaRasaIso.ps1 -Verbose
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: linux-tabula-rasa-iso
+          path: out/*.iso
+          if-no-files-found: error
