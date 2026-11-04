@@ -23,6 +23,7 @@ const JOB_POLL_MS = 1000
 //   hasToken           Whether this page holds a token.
 //   runJob             Starts a job and polls it until it is no longer running.
 //   pollJob            Polls a started job until it is no longer running.
+//   getRunningJobs     The jobs that run on the server, also those another page started.
 //
 
 export class SessionLostError extends Error {}
@@ -121,4 +122,14 @@ export async function pollJob({ id, onProgress = () => {} }) {
         if (job.status !== 'Running') return job
         await new Promise(resolve => setTimeout(resolve, JOB_POLL_MS))
     }
+}
+
+/**
+ * Lists the jobs that run on the server: a reloaded page or another device resumes them.
+ *
+ * @returns {Promise<Array<{id: string, type: string, disk: string, partition: string}>>}
+ */
+export async function getRunningJobs() {
+    const { jobs } = await request({ path: '/api/jobs' })
+    return jobs ?? []
 }

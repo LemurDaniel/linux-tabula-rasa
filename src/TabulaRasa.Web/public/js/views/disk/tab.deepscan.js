@@ -16,16 +16,16 @@ const TAB_ID = 'deepscan'
 // ============================   DEEP SCAN TAB   ============================
 // ===========================================================================
 //
-//   renderProgress   Progress bar, live hits and the cancel button.
+//   renderProgress   The progress card, rendered once: percent, bar and hits are updated in place.
 //   render           Start button, then progress until done.
 //
 
-function renderProgress(job) {
+function renderProgress() {
     return `
         <div class="card">
-            <p><span class="spinner"></span>Scanning ... <strong>${esc(job.percent)} %</strong></p>
-            <div class="progress"><div style="width:${Number(job.percent)}%"></div></div>
-            ${renderBars(job.hits)}
+            <p><span class="spinner"></span><span id="scan-state">Scanning ...</span> <strong id="scan-percent">0 %</strong></p>
+            <div class="progress"><div id="scan-bar" style="width:0%"></div></div>
+            <div id="scan-hits"></div>
             <div style="margin-top:12px"><button class="block" id="cancel">Stop scan</button></div>
         </div>`
 }
@@ -34,12 +34,24 @@ async function render({ app, disk, el, navId }) {
     const key = app.jobKey(disk.Name, 'DeepScan')
 
     const run = async jobId => {
+        // Rendered once and updated in place: a re-render every poll would replace the stop
+        // button between press and release, and the click would get lost.
+        let isRendered = false
         const onProgress = job => {
             if (!app.isCurrent(navId)) return
-            el.innerHTML = renderProgress(job)
-            el.querySelector('#cancel').addEventListener('click', () => {
-                void request({ path: `/api/jobs/${encodeURIComponent(app.jobs[key])}`, method: 'DELETE' })
-            })
+            if (!isRendered) {
+                el.innerHTML = renderProgress()
+                el.querySelector('#cancel').addEventListener('click', event => {
+                    event.currentTarget.disabled = true
+                    el.querySelector('#scan-state').textContent = 'Stopping ...'
+                    void request({ path: `/api/jobs/${encodeURIComponent(app.jobs[key])}`, method: 'DELETE' })
+                        .catch(exception => app.toast(exception.message))
+                })
+                isRendered = true
+            }
+            el.querySelector('#scan-percent').textContent = `${Number(job.percent)} %`
+            el.querySelector('#scan-bar').style.width = `${Number(job.percent)}%`
+            el.querySelector('#scan-hits').innerHTML = renderBars(job.hits)
         }
         const job = null != jobId
             ? await pollJob({ id: jobId, onProgress })
@@ -74,4 +86,4 @@ async function render({ app, disk, el, navId }) {
     el.querySelector('#scan').addEventListener('click', () => { void run(null).catch(exception => app.toast(exception.message)) })
 }
 
-export default { id: TAB_ID, label: '🔍 Deep scan', render }
+export default { id: TAB_ID, label: '🔍 Deep scan', jobType: 'DeepScan', render }

@@ -84,7 +84,16 @@ async function render({ app, disk, el, navId }) {
         el.querySelector('#rerun').addEventListener('click', () => start())
         return
     }
+    // Another job runs (one at a time): no automatic read, it would only be refused.
+    const otherJob = app.runningJobs.find(job => app.jobKey(job.disk, job.type) !== key)
+    if (null == app.jobs[key] && null != otherJob) {
+        el.innerHTML = `
+            <div class="notice">A ${esc(app.jobName(otherJob.type))} on ${esc(otherJob.disk)} is still running, only one job runs at a time.</div>
+            <button class="block" id="rerun">Read anyway</button>`
+        el.querySelector('#rerun').addEventListener('click', () => { void start().catch(exception => app.toast(exception.message)) })
+        return
+    }
     await start()
 }
 
-export default { id: TAB_ID, label: '📊 Overview', render }
+export default { id: TAB_ID, label: '📊 Overview', jobType: 'Overview', render }

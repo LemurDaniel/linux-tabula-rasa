@@ -24,8 +24,9 @@ function Find-TabulaRasaFileSignature {
                   An estimate, not an inventory.
         - Deep    Reads the whole disk in 4 MiB chunks, as fast as the disk can deliver.
 
-        OnProgress is called whenever the percentage changes, with the percentage and the current
-        hits. When it returns $false, the scan stops and the result is marked IsCancelled.
+        OnProgress is called whenever the percentage changes and at least once a second, with the
+        percentage and the current hits. When it returns $false, the scan stops and the result is
+        marked IsCancelled. Once a second matters on big disks: 1 % of 1 TB takes about a minute.
 
     .EXAMPLE
         PS> Find-TabulaRasaFileSignature -Path /dev/sdb -SizeBytes 32000000000 -Mode Quick
@@ -76,7 +77,7 @@ function Find-TabulaRasaFileSignature {
 
         <#
         [Optional]
-        Called with (Percent, Hits) whenever the percentage changes. Returning $false cancels.
+        Called with (Percent, Hits) whenever the percentage changes and once a second. Returning $false cancels.
         #>
         [Parameter(
             Mandatory = $false
@@ -89,6 +90,7 @@ function Find-TabulaRasaFileSignature {
     $QUICK_BLOCK_SIZE   = 65536
     $QUICK_SAMPLE_COUNT = 254       # plus first and last block = 256 blocks
     $DEEP_CHUNK_SIZE    = 4194304   # a multiple of the sector size, so no header crosses a chunk
+    $PROGRESS_EVERY_MS  = 1000
 
     # ===========================================================================
     # ========================   SCAN FOR FILE HEADERS   ========================
@@ -128,11 +130,12 @@ function Find-TabulaRasaFileSignature {
     # > Deep    sequential reads from 0 to the end
     $SampleOffsets = $Mode -EQ 'Quick' ? (Get-TabulaRasaSampleOffset -SizeBytes $SizeBytes -BlockSize $QUICK_BLOCK_SIZE -SampleCount $QUICK_SAMPLE_COUNT) : @()
 
-    $bufferSize   = $Mode -EQ 'Quick' ? $QUICK_BLOCK_SIZE : $DEEP_CHUNK_SIZE
-    $buffer       = [System.Byte[]]::new($bufferSize)
-    $BytesScanned = [System.Int64] 0
-    $IsCancelled  = $false
-    $lastPercent  = -1
+    $bufferSize    = $Mode -EQ 'Quick' ? $QUICK_BLOCK_SIZE : $DEEP_CHUNK_SIZE
+    $buffer        = [System.Byte[]]::new($bufferSize)
+    $BytesScanned  = [System.Int64] 0
+    $IsCancelled   = $false
+    $lastPercent   = -1
+    $sinceProgress = [System.Diagnostics.Stopwatch]::StartNew()
 
     $stream = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::ReadWrite, 1, [System.IO.FileOptions]::SequentialScan)
     try {
@@ -162,9 +165,11 @@ function Find-TabulaRasaFileSignature {
             $BytesScanned += $readCount
             $readIndex++
 
-            # Progress and cancellation, only when the percentage changed.
-            if ($null -NE $OnProgress -AND $percent -NE $lastPercent) {
+            # Progress and cancellation: when the percentage changed, else once a second.
+            $isProgressDue = $percent -NE $lastPercent -OR $sinceProgress.ElapsedMilliseconds -GE $PROGRESS_EVERY_MS
+            if ($null -NE $OnProgress -AND $isProgressDue) {
                 $lastPercent = $percent
+                $sinceProgress.Restart()
                 if ((& $OnProgress $percent @(& $getHits)) -EQ $false) {
                     Write-Verbose "[Find-TabulaRasaFileSignature] Cancelled at $percent %."
                     $IsCancelled = $true

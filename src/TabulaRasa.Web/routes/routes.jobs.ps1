@@ -2,6 +2,7 @@
 #   Loaded by Use-PodeRoutes in Start-TabulaRasaServer. All routes need the session token.
 #
 #   POST   /api/jobs       { type, disk, partition?, serial? }   Starts a job, answers { id }.
+#   GET    /api/jobs       The running jobs, so a reloaded page or another device resumes them.
 #   GET    /api/jobs/:id   Status, percent, hits and result of a job.
 #   DELETE /api/jobs/:id   Asks a running deep scan to stop.
 
@@ -15,6 +16,7 @@
 # ===========================================================================
 #
 #   POST /api/jobs       Validates the request, registers the job, starts the task.
+#   GET /api/jobs        Lists the running jobs.
 #   GET /api/jobs/:id    Returns the job as the browser polls it.
 #   DELETE /api/jobs/:id Sets IsCancelRequested, the deep scan stops at the next percent.
 #
@@ -57,12 +59,22 @@ Add-PodeRoute -Method Post -Path '/api/jobs' -ScriptBlock {
         New-TabulaRasaWebJob -Jobs $jobs -Type $type -DiskName $Disk.Name -PartitionName ([System.String] $Request.partition)
     }
     if ($null -EQ $Job) {
-        Write-TabulaRasaWebError -StatusCode 409 -Message 'Another job is still running, wait for it or cancel it.'
+        $running = @($jobs.Values | Where-Object { $_['Status'] -EQ 'Running' })[0]
+        Write-TabulaRasaWebError -StatusCode 409 -Message "Only one job runs at a time: '$($running['Type'])' on '$($running['DiskName'])' is still running. Open that disk to follow or stop it."
         return
     }
 
     $null = Invoke-PodeTask -Name 'RunJob' -ArgumentList @{ JobId = $Job['Id'] }
     Write-PodeJsonResponse -StatusCode 202 -Value @{ id = $Job['Id'] }
+}
+
+Add-PodeRoute -Method Get -Path '/api/jobs' -ScriptBlock {
+    $running = @((Get-PodeState -Name 'Jobs').Values | Where-Object { $_['Status'] -EQ 'Running' })
+    Write-PodeJsonResponse -Value @{
+        jobs = @($running | ForEach-Object {
+                @{ id = $_['Id']; type = $_['Type']; disk = $_['DiskName']; partition = $_['PartitionName'] }
+            })
+    }
 }
 
 Add-PodeRoute -Method Get -Path '/api/jobs/:id' -ScriptBlock {

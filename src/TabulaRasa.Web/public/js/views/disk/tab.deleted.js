@@ -79,4 +79,4 @@ async function render({ app, disk, el, navId }) {
     if (null != app.jobs[key]) await read(app.jobs[key])
 }
 
-export default { id: TAB_ID, label: '🗑️ Deleted', render }
+export default { id: TAB_ID, label: '🗑️ Deleted', jobType: 'Deleted', render }

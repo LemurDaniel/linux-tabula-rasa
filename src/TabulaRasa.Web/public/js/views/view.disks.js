@@ -58,7 +58,8 @@ export default async function show({ app, navId }) {
         if (null == card) return
         if (event.type === 'keydown' && event.key !== 'Enter') return
         const disk = disks.find(item => item.Name === card.dataset.disk)
-        void app.go('disk', { disk, tab: 'overview' })
+        // No tab: the disk view opens the tab of a job that still runs, else the overview.
+        void app.go('disk', { disk })
     }
     app.root.onclick = open
     app.root.onkeydown = open

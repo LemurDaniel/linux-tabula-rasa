@@ -23,7 +23,7 @@ const REPLUG_POLL_MS = 1000
 //   showJob         Starts or follows the wipe job with progress, shows the check.
 //   renderSerial    The disk with its serial, the checkbox and the wipe button.
 //   runReplug       Steps of the replug, then the final button.
-//   render          Plan plus the fitting confirmation.
+//   render          Plan plus the fitting confirmation, or the progress of a wipe that still runs.
 //
 
 function renderPlan(disk) {
@@ -134,6 +134,15 @@ async function runReplug({ app, disk, el, navId }) {
 }
 
 async function render({ app, disk, el, navId }) {
+    // A wipe that still runs (started before a reload or on another device) is followed, not offered again.
+    const runningId = app.jobs[app.jobKey(disk.Name, 'Wipe')]
+    if (null != runningId) {
+        el.innerHTML = renderPlan(disk) + '<div id="flow"></div>'
+        await showJob({ app, el: el.querySelector('#flow'), navId, id: runningId })
+        delete app.jobs[app.jobKey(disk.Name, 'Wipe')]
+        return
+    }
+
     const isSerial = disk.Wipe.Confirmation === 'Serial'
     el.innerHTML = renderPlan(disk) + (isSerial
         ? renderSerial(disk)
@@ -168,4 +177,4 @@ async function render({ app, disk, el, navId }) {
     })
 }
 
-export default { id: TAB_ID, label: '🧹 Wipe', isDanger: true, render }
+export default { id: TAB_ID, label: '🧹 Wipe', isDanger: true, jobType: 'Wipe', render }

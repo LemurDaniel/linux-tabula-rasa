@@ -2,7 +2,7 @@
 //   Entry point of the web UI, loaded by index.html as ES module.
 //   Holds the shared app context and switches between the views.
 
-import { releaseSession, hasToken, SessionLostError } from './utils/api.js'
+import { releaseSession, hasToken, getRunningJobs, SessionLostError } from './utils/api.js'
 import { esc } from './utils/format.js'
 
 import views from './views/_index.js'
@@ -23,6 +23,8 @@ const TOAST_MS = 4000
 //   app.isCurrent   Lets polling loops stop once the user navigated away.
 //   app.toast       Shows a short message at the bottom.
 //   app.jobs        Running job per disk and type, so a tab resumes its progress.
+//   app.syncJobs    Adds the jobs the server runs, also those a reloaded page or another device started.
+//   app.jobName     The readable name of a job type, e.g. 'deep scan'.
 //
 
 const root = document.getElementById('app')
@@ -35,6 +37,7 @@ let toastTimer = null
 const app = {
     root,
     jobs: {},
+    runningJobs: [],    // as of the last syncJobs
     cache: {},
 
     async go(viewName, params = {}) {
@@ -69,6 +72,17 @@ const app = {
 
     jobKey(diskName, type) {
         return `${diskName}:${type}`
+    },
+
+    async syncJobs() {
+        app.runningJobs = await getRunningJobs()
+        for (const job of app.runningJobs) {
+            app.jobs[app.jobKey(job.disk, job.type)] = job.id
+        }
+    },
+
+    jobName(type) {
+        return { Overview: 'overview', Deleted: 'search for deleted files', DeepScan: 'deep scan', Wipe: 'wipe' }[type] ?? type
     },
 }
 

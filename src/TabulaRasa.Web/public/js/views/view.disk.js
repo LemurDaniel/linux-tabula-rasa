@@ -15,7 +15,8 @@ import tabs from './disk/_index.js'
 // ===========================================================================
 //
 //   render   Header with back button and the tab bar.
-//   show     Renders the frame and hands the content area to the active tab.
+//   show     Renders the frame and hands the content area to the active tab. Without a chosen
+//            tab, a job that still runs on this disk opens its own tab.
 //
 
 function render({ disk, activeTab }) {
@@ -38,7 +39,12 @@ function render({ disk, activeTab }) {
 
 export default async function show({ app, params, navId }) {
     const { disk } = params
-    const activeTab = params.tab ?? 'overview'
+    await app.syncJobs()
+
+    // Coming back to a disk with a running job (deep scan, wipe, ...) shows that job, not a new overview.
+    const runningJob = app.runningJobs.find(job => job.disk === disk.Name)
+    const runningTab = null == runningJob ? null : tabs.find(item => item.jobType === runningJob.type)
+    const activeTab = params.tab ?? runningTab?.id ?? 'overview'
     const tab = tabs.find(item => item.id === activeTab) ?? tabs[0]
 
     app.root.innerHTML = render({ disk, activeTab: tab.id })
