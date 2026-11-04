@@ -90,7 +90,7 @@ Linux:
 ./build/write-tabula-rasa-stick.sh --build
 ```
 
-With your own hotspot (used when the stick finds no LAN):
+With your own hotspot name and password:
 ```powershell
 ./build/Write-TabulaRasaStick.ps1 -Build -HotspotSsid 'Wiper' -HotspotPassword 'not-my-wifi-password'
 ```
@@ -118,7 +118,7 @@ The hotspot password is stored in plain text on the stick and shown on the kiosk
 ## How it works
 ```
 tty1   Kiosk: cage + Chromium  ──►  http://localhost  ──┐
-Phone  ── LAN / hotspot ──►  http://tabula-rasa.local  ─┤
+Phone  ── hotspot / LAN ──►  http://tabula-rasa.local  ─┤
                                                         ▼
                                Pode web server (pwsh, port 80)
                                                         │
@@ -128,7 +128,8 @@ tty2   Text menu (PwshSpectreConsole), also the fallback without a GPU
 
 1. The stick boots Debian trixie (UEFI with Secure Boot, or BIOS).
 2. The screen shows the web UI with QR codes for the phone. The stick announces itself as `tabula-rasa.local` (mDNS).
-   Without a LAN cable it opens the Wi-Fi hotspot `TabulaRasa` after 30 seconds.
+   With a Wi-Fi card it opens the hotspot `TabulaRasa` right away: join it, then open `http://10.42.0.1/`.
+   LAN is the second way: with a cable the stick is also reachable through your router.
 3. One device controls the stick at a time: the first one that taps **Start**. The kiosk can always take over,
    an idle session is free again after 5 minutes.
 4. Every disk except the stick itself is listed. Picking one shows what is still on it, all read-only:

@@ -40,13 +40,23 @@ function render({ info }) {
     const { network, session, isLocal } = info
     const hotspot = network.Hotspot
 
-    const qrCodes = isLocal
-        ? `<div class="qr-grid">
-               ${hotspot?.IsActive ? qrCard({ text: wifiQrText({ ssid: hotspot.Ssid, password: hotspot.Password }), caption: `Wi-Fi: ${hotspot.Ssid} / ${hotspot.Password}` }) : ''}
-               ${network.Urls.slice(0, 2).map(url => qrCard({ text: url, caption: url })).join('')}
-           </div>
-           <p class="muted">Scan with your phone to control the stick from there.</p>`
-        : ''
+    // > Hotspot runs   join the Wi-Fi, open its address; LAN addresses as text below (second way)
+    // > No hotspot     the LAN addresses as QR codes
+    const lanUrls = network.Urls.filter(url => url !== hotspot?.Url)
+    const isHotspot = hotspot?.IsActive && null != hotspot.Url
+    const qrCodes = !isLocal
+        ? ''
+        : isHotspot
+            ? `<div class="qr-grid">
+                   ${qrCard({ text: wifiQrText({ ssid: hotspot.Ssid, password: hotspot.Password }), caption: `1. Wi-Fi: ${hotspot.Ssid} / ${hotspot.Password}` })}
+                   ${qrCard({ text: hotspot.Url, caption: `2. ${hotspot.Url}` })}
+               </div>
+               <p class="muted">Scan both with your phone to control the stick from there.</p>
+               ${lanUrls.length > 0 ? `<p class="muted small">Or over LAN: ${lanUrls.map(url => esc(url)).join(' · ')}</p>` : ''}`
+            : `<div class="qr-grid">
+                   ${lanUrls.slice(0, 2).map(url => qrCard({ text: url, caption: url })).join('')}
+               </div>
+               <p class="muted">Scan with your phone to control the stick from there.</p>`
 
     const lock = session.isLocked
         ? `<div class="notice">In use by <strong>${esc(session.ownerAddress)}</strong>, free in ${Math.ceil(session.secondsLeft / 60)} min.</div>`

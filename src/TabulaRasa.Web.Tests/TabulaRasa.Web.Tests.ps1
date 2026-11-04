@@ -5,10 +5,13 @@
 #
 #   Chapters:
 #     CONTROL SESSION REPLUG AND JOBS   Session lock, replug state machine, job list.
+#     HOTSPOT                           Hotspot first, LAN as the second way.
 #
 
 # Variables set in BeforeAll are used in the It blocks, the analyzer cannot follow Pester's scopes.
 [Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSUseDeclaredVarsMoreThanAssignments', '')]
+# The nmcli mock records its calls and sets the exit code where the module sees them: global scope.
+[Diagnostics.CodeAnalysis.SuppressMessageAttribute('PSAvoidGlobalVars', '')]
 param ()
 
 # ===========================================================================
@@ -148,5 +151,52 @@ Describe 'New-TabulaRasaWebJob' {
             $job['StartedAt'] = $T0.AddSeconds($index)
         }
         $jobs.Count | Should -BeLessOrEqual 20
+    }
+}
+
+# ===========================================================================
+# ===============================   HOTSPOT   ===============================
+# ===========================================================================
+#
+#   Start-TabulaRasaWebHotspot   Opens the hotspot also with LAN, skips it without a Wi-Fi card.
+#
+
+Describe 'Start-TabulaRasaWebHotspot' {
+    BeforeAll {
+        # Pester can only mock a command that exists, nmcli is missing on Windows and on CI.
+        function global:nmcli { }
+    }
+
+    AfterAll {
+        Remove-Item -Path function:global:nmcli
+    }
+
+    BeforeEach {
+        $global:NmcliCalls = [System.Collections.Generic.List[System.String]]::new()
+        Mock -ModuleName TabulaRasa.Web -CommandName Start-Sleep -MockWith { }
+        Mock -ModuleName TabulaRasa.Web -CommandName Get-Content -MockWith { '{ "Ssid": "TabulaRasa", "Password": "wipe-it-clean" }' }
+    }
+
+    It 'opens the hotspot although a LAN cable is connected' {
+        Mock -ModuleName TabulaRasa.Web -CommandName nmcli -MockWith {
+            $global:NmcliCalls.Add("$args")
+            $global:LASTEXITCODE = 0
+            # 'nmcli -t -f TYPE,STATE device': the device list, every other call is the hotspot.
+            if ($args[-1] -EQ 'device') { 'ethernet:connected'; 'wifi:disconnected' }
+        }
+        Start-TabulaRasaWebHotspot -WaitSeconds 0
+        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' }) | Should -HaveCount 1
+        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' })[0] | Should -BeLike '*ssid TabulaRasa password wipe-it-clean*'
+    }
+
+    It 'leaves the network to LAN without a Wi-Fi card' {
+        Mock -ModuleName TabulaRasa.Web -CommandName nmcli -MockWith {
+            $global:NmcliCalls.Add("$args")
+            $global:LASTEXITCODE = 0
+            # 'nmcli -t -f TYPE,STATE device': the device list, every other call is the hotspot.
+            if ($args[-1] -EQ 'device') { 'ethernet:connected' }
+        }
+        Start-TabulaRasaWebHotspot -WaitSeconds 0
+        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' }) | Should -HaveCount 0
     }
 }
