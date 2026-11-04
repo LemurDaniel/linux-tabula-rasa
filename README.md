@@ -4,12 +4,6 @@ Plug it in, boot, pick a disk on the screen or on your phone, confirm, done.
 
 ![The disk list of the web UI](docs/screenshots/disks.png)
 
-<p>
-  <img src="docs/screenshots/overview.png" alt="What is still on the disk, on a phone" width="300">
-  &nbsp;
-  <img src="docs/screenshots/wipe.png" alt="Wipe plan with the serial to confirm, on a phone" width="300">
-</p>
-
 > **Status: early.** Everything works end to end on test images. Overwrite is tested on real block devices,
 > ATA Secure Erase and NVMe Sanitize are implemented but not yet tested on real drives.
 
