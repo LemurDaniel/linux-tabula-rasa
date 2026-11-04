@@ -1,0 +1,45 @@
+#!/bin/sh
+# NOTE:
+#   Started by tabula-rasa-save-diagnostics.timer 4 minutes after boot, shell because it must run
+#   even when pwsh or the web server is the problem.
+#   Writes the diagnostics onto the data partition of a Ventoy stick (label "Ventoy"), so a black
+#   screen can be read later on another computer. Without a Ventoy stick it does nothing.
+
+REPORT_NAME="tabula-rasa-diagnostics.txt"
+MOUNT_POINT="/run/tabula-rasa/ventoy"
+
+DEVICE="$(blkid -L Ventoy 2>/dev/null)"
+if [ -z "${DEVICE}" ]; then
+    echo "No partition labeled Ventoy, nothing to save."
+    exit 0
+fi
+
+mkdir -p "${MOUNT_POINT}"
+mount "${DEVICE}" "${MOUNT_POINT}" || exit 1
+
+{
+    echo "===== Boot $(date -u '+%Y-%m-%d %H:%M:%S') UTC, $(uname -r) ====="
+    echo
+    echo "===== Failed units ====="
+    systemctl --failed --no-pager
+    echo
+    for unit in tabula-rasa-kiosk tabula-rasa-kiosk-watchdog tabula-rasa-server tabula-rasa-hotspot; do
+        echo "===== ${unit} ====="
+        journalctl -b -u "${unit}" -n 80 --no-pager
+        echo
+    done
+    echo "===== Warnings and errors ====="
+    journalctl -b -p warning -n 150 --no-pager
+    echo
+    echo "===== Graphics and input ====="
+    ls -l /dev/dri /dev/input 2>&1
+    loginctl list-sessions --no-pager 2>&1
+    echo
+    echo "===== Network ====="
+    ip -brief address 2>&1
+    nmcli -t device 2>&1
+} > "${MOUNT_POINT}/${REPORT_NAME}" 2>&1
+
+sync
+umount "${MOUNT_POINT}"
+echo "Diagnostics saved to ${REPORT_NAME} on ${DEVICE}."

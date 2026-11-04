@@ -1,5 +1,6 @@
 # Kiosk on tty1: cage (Wayland kiosk) with Chromium on the local web UI.
-# -s keeps VT switching, so Alt+F2 reaches the text menu on tty2.
+# -s asks cage to allow VT switching (Ctrl+Alt+F2), the start screen also has a button for the text menu.
+# Chromium starts only once the web server answers: in kiosk mode it never reloads a failed page.
 # Three crashes within a minute (no GPU, no display) -> tabula-rasa-fallback switches to tty2.
 [Unit]
 Description=Tabula Rasa kiosk
@@ -27,7 +28,10 @@ UtmpMode=user
 Environment=XDG_SESSION_TYPE=wayland
 # Without GPU firmware (not shipped) the GPU driver may not load, software rendering keeps the kiosk up.
 Environment=WLR_RENDERER_ALLOW_SOFTWARE=1
-ExecStart=/usr/bin/cage -s -- /usr/bin/chromium --kiosk --no-first-run --noerrdialogs --disable-translate --disable-features=Translate --password-store=basic --ozone-platform=wayland --app=http://localhost/
+# Waits up to 3 minutes for the web server, then starts Chromium anyway (it shows the error page).
+ExecStartPre=/bin/sh -c 'for i in $(seq 1 180); do curl -sf -o /dev/null http://localhost/api/info && exit 0; sleep 1; done; exit 0'
+TimeoutStartSec=240
+ExecStart=/usr/bin/cage -s -- /usr/bin/chromium --enable-logging=stderr --v=0 --kiosk --no-first-run --noerrdialogs --disable-translate --disable-features=Translate --password-store=basic --ozone-platform=wayland --app=http://localhost/
 Restart=on-failure
 RestartSec=2
 

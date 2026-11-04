@@ -10,7 +10,8 @@ function Get-TabulaRasaDisk {
 
     .DESCRIPTION
         Reads the disks via lsblk and parses them with ConvertFrom-TabulaRasaLsblk.
-        The boot disk (Get-TabulaRasaBootDisk) is always hidden, so the stick cannot wipe itself.
+        The boot disks (Get-TabulaRasaBootDisk, also a Ventoy stick) are always hidden, so the stick
+        cannot wipe itself.
 
     .EXAMPLE
         PS> Get-TabulaRasaDisk | Format-Table Path, Kind, Model, Serial
@@ -26,9 +27,9 @@ function Get-TabulaRasaDisk {
         throw [System.InvalidOperationException]::new("lsblk must list the disks, got exit code $LASTEXITCODE.")
     }
 
-    $BootDisk = Get-TabulaRasaBootDisk
+    $BootDisks = @(Get-TabulaRasaBootDisk)
 
     return $LsblkJson
     | ConvertFrom-TabulaRasaLsblk
-    | Where-Object -Property Name -NE -Value $BootDisk
+    | Where-Object { $_.Name -NOTIN $BootDisks }
 }

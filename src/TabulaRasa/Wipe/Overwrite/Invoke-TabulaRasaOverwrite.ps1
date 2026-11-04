@@ -67,7 +67,9 @@ function Invoke-TabulaRasaOverwrite {
     $stream = [System.IO.FileStream]::new($Path, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Write, [System.IO.FileShare]::ReadWrite, 1)
     try {
         while ($written -LT $SizeBytes) {
-            $count = [System.Int32] [System.Math]::Min($CHUNK_BYTES, $SizeBytes - $written)
+            # Int64 on both sides: with an Int32 first argument PowerShell picks Math.Min(Int32, Int32)
+            # and fails as soon as more than 2 GB are left.
+            $count = [System.Int32] [System.Math]::Min([System.Int64] $CHUNK_BYTES, $SizeBytes - $written)
             $stream.Write($zeros, 0, $count)
             $written += $count
 

@@ -8,9 +8,14 @@ set -e
 # The kiosk runs Chromium as an unprivileged user, root never renders web content.
 id kiosk >/dev/null 2>&1 || useradd --create-home --shell /usr/sbin/nologin --groups video,render,input kiosk
 
+# A checkout on Windows loses the executable bit of the helper scripts in includes.chroot.
+chmod +x /usr/local/sbin/tabula-rasa-kiosk-watchdog /usr/local/sbin/tabula-rasa-save-diagnostics
+
 systemctl enable NetworkManager.service
 systemctl enable avahi-daemon.service
 systemctl enable tabula-rasa-server.service
 systemctl enable tabula-rasa-hotspot.service
 systemctl enable tabula-rasa-kiosk.service
+systemctl enable tabula-rasa-kiosk-watchdog.service
+systemctl enable tabula-rasa-save-diagnostics.timer
 systemctl set-default graphical.target

@@ -1,0 +1,10 @@
+# 4 minutes after boot the kiosk and its watchdog have shown whether the screen works.
+[Unit]
+Description=Tabula Rasa diagnostics 4 minutes after boot
+
+[Timer]
+OnBootSec=4min
+Unit=tabula-rasa-save-diagnostics.service
+
+[Install]
+WantedBy=timers.target

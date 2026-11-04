@@ -95,10 +95,12 @@ function Mount-TabulaRasaPartition {
 
     Write-Verbose "[Mount-TabulaRasaPartition] Mounting '$Path' ($($MountOption.Type), $($MountOption.Options)) at '$MountPoint'."
     # Full path: 'mount' is an alias of New-PSDrive on Windows, the analyzer and the reader would see that.
-    & '/usr/bin/mount' -t $MountOption.Type -o $MountOption.Options $Path $MountPoint
+    $mountOutput = & '/usr/bin/mount' -t $MountOption.Type -o $MountOption.Options $Path $MountPoint 2>&1
     if ($LASTEXITCODE -NE 0) {
+        # Kept before the cleanup, blockdev below overwrites $LASTEXITCODE.
+        $mountExitCode = $LASTEXITCODE
         blockdev --setrw $Path
-        throw [System.InvalidOperationException]::new("mount must open '$Path' as '$($MountOption.Type)' read-only, got exit code $LASTEXITCODE.")
+        throw [System.InvalidOperationException]::new("mount must open '$Path' as '$($MountOption.Type)' read-only, got exit code $($mountExitCode): $("$mountOutput".Trim())")
     }
 
     # ---------------------------------------------------------------------------

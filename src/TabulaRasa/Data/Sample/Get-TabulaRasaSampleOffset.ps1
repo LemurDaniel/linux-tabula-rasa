@@ -56,11 +56,13 @@ function Get-TabulaRasaSampleOffset {
         $SampleCount
     )
 
-    $LastOffset = [System.Math]::Max(0, [System.Math]::Floor(($SizeBytes - $BlockSize) / $BlockSize) * $BlockSize)
+    # Int64 throughout: with a literal 0 PowerShell picks Math.Max(Int32, Int32) and fails on disks over 2 GB.
+    $lastBlock  = [System.Math]::Max([System.Int64] 0, [System.Int64] [System.Math]::Floor(($SizeBytes - $BlockSize) / $BlockSize))
+    $LastOffset = $lastBlock * [System.Int64] $BlockSize
 
     $Offsets = @(0) + @(
         for ($index = 1; $index -LE $SampleCount; $index++) {
-            [System.Math]::Floor(($LastOffset * $index / ($SampleCount + 1)) / $BlockSize) * $BlockSize
+            [System.Int64] [System.Math]::Floor($lastBlock * $index / ($SampleCount + 1)) * [System.Int64] $BlockSize
         }
     ) + @($LastOffset)
     | ForEach-Object { [System.Int64] $_ }

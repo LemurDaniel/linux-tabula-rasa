@@ -41,6 +41,15 @@ Describe 'Get-TabulaRasaSampleOffset' {
             Get-TabulaRasaSampleOffset -SizeBytes 1000 -BlockSize 4096 -SampleCount 8 | Should -Be @(0)
         }
     }
+
+    It 'handles a 500 GB disk (beyond Int32)' {
+        InModuleScope TabulaRasa {
+            $Offsets = Get-TabulaRasaSampleOffset -SizeBytes 500107862016 -BlockSize 4096 -SampleCount 64
+            $Offsets.Count | Should -Be 66
+            $Offsets[-1]   | Should -Be 500107857920
+            $Offsets       | ForEach-Object { $_ % 4096 | Should -Be 0 }
+        }
+    }
 }
 
 Describe 'Test-TabulaRasaDiskData' {

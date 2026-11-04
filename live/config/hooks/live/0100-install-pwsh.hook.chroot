@@ -29,6 +29,10 @@ chmod +x "${PWSH_HOME}/pwsh"
 ln -sf "${PWSH_HOME}/pwsh" /usr/bin/pwsh
 rm -f "${PWSH_ARCHIVE}" hashes.sha256
 
+# Logs only critical events to syslog: by default pwsh writes every script block Pode compiles
+# into the journal, which floods it and slows the start of the web server by minutes.
+printf '{ "LogLevel": "Critical" }\n' > "${PWSH_HOME}/powershell.config.json"
+
 # Install the modules for all users, straight from the gallery package (a .nupkg is a zip).
 # Inside the chroot pwsh loads none of its bundled modules (neither Install-PSResource nor
 # Expand-Archive are found), so unzip extracts and the manifest proves the module is in place.

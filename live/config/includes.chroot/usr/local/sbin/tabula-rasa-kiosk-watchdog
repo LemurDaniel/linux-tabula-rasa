@@ -1,0 +1,20 @@
+#!/bin/sh
+# NOTE:
+#   Started by tabula-rasa-kiosk-watchdog.service, shell because it must run even when pwsh is the problem.
+#   Gives the screen to the text menu when the kiosk browser never reaches the web server:
+#   cage can hold the screen black without crashing, and then also blocks Ctrl+Alt+F2.
+
+WAIT_SECONDS=180
+KIOSK_URL="http://localhost/api/kiosk"
+
+sleep "${WAIT_SECONDS}"
+
+# The web server sets isSeen when Chromium on this machine called the API at least once.
+if curl -sf "${KIOSK_URL}" | grep -q '"isSeen": *true'; then
+    echo "Kiosk browser is alive, nothing to do."
+    exit 0
+fi
+
+echo "Kiosk browser never called ${KIOSK_URL} within ${WAIT_SECONDS} s, switching to the text menu."
+systemctl stop tabula-rasa-kiosk.service
+chvt 2

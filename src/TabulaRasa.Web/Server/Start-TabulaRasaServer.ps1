@@ -84,7 +84,7 @@ function Start-TabulaRasaServer {
     $CORE_MODULE     = (Resolve-Path -Path (Join-Path -Path $ModulePath -ChildPath 'TabulaRasa.psm1')).Path
     $WEB_MODULE      = Join-Path -Path $WEB_ROOT -ChildPath 'TabulaRasa.Web.psm1'
     $THREAD_COUNT    = 4
-    $PUBLIC_PATHS    = @('/api/info', '/api/qr', '/api/session', '/api/console', '/api/diagnostics')
+    $PUBLIC_PATHS    = @('/api/info', '/api/qr', '/api/session', '/api/console', '/api/diagnostics', '/api/kiosk')
 
     Start-PodeServer -Threads $THREAD_COUNT -ScriptBlock {
         Add-PodeEndpoint -Address * -Port $Port -Protocol Http
@@ -102,10 +102,18 @@ function Start-TabulaRasaServer {
         $null = Set-PodeState -Name 'Jobs' -Value ([System.Collections.Hashtable]::Synchronized(@{}))
         $null = Set-PodeState -Name 'Replug' -Value ([System.Collections.Hashtable]::Synchronized(@{ Phase = 'Idle' }))
         $null = Set-PodeState -Name 'Config' -Value @{ SessionTimeoutSeconds = $SessionTimeoutSeconds }
+        $null = Set-PodeState -Name 'Kiosk' -Value ([System.Collections.Hashtable]::Synchronized(@{ LastSeen = $null }))
 
         # Session lock: everything under /api except the public paths needs the owner's token.
         Add-PodeMiddleware -Name 'SessionLock' -Route '/api/*' -ArgumentList @(, $PUBLIC_PATHS) -ScriptBlock {
             param ($PublicPaths)
+
+            # The kiosk browser is alive when Chromium on this machine calls the API (curl does not count),
+            # the kiosk watchdog reads it via GET /api/kiosk.
+            if ([System.Net.IPAddress]::IsLoopback($WebEvent.Request.RemoteEndPoint.Address) -AND (Get-PodeHeader -Name 'User-Agent') -LIKE '*Chrome*') {
+                (Get-PodeState -Name 'Kiosk')['LastSeen'] = [System.DateTime]::UtcNow
+            }
+
             if ($WebEvent.Path -IN $PublicPaths) {
                 return $true
             }

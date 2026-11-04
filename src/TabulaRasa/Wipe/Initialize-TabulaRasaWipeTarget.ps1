@@ -58,7 +58,7 @@ function Initialize-TabulaRasaWipeTarget {
     #   The boot stick is refused, it never wipes itself.
     # ---------------------------------------------------------------------------
 
-    if ((Split-Path -Path $Path -Leaf) -EQ (Get-TabulaRasaBootDisk)) {
+    if ((Split-Path -Path $Path -Leaf) -IN @(Get-TabulaRasaBootDisk)) {
         throw [System.InvalidOperationException]::new("'$Path' is the boot stick and must never be wiped.")
     }
 

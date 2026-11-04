@@ -1,0 +1,7 @@
+# Writes the diagnostics onto the data partition of a Ventoy stick, see tabula-rasa-save-diagnostics.timer.
+[Unit]
+Description=Tabula Rasa diagnostics onto the Ventoy stick
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tabula-rasa-save-diagnostics

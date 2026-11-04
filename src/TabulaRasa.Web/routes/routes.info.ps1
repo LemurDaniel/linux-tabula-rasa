@@ -6,6 +6,7 @@
 #   POST /api/console     Switches the screen to the text menu on tty2, from the kiosk only.
 #   GET  /api/diagnostics Failed units and the logs of kiosk and server as plain text, for a phone
 #                         when the screen stays black.
+#   GET  /api/kiosk       Whether the kiosk browser has called the API, read by the kiosk watchdog.
 
 #
 #   Chapters:
@@ -20,6 +21,7 @@
 #   GET /api/qr         Renders text as SVG QR code with qrencode.
 #   POST /api/console   chvt 2 for the kiosk, cage does not always let Ctrl+Alt+F2 through.
 #   GET /api/diagnostics   systemctl and journalctl output, read-only.
+#   GET /api/kiosk         isSeen and the seconds since the last call of the kiosk browser.
 #
 
 Add-PodeRoute -Method Get -Path '/api/info' -ScriptBlock {
@@ -93,4 +95,12 @@ Add-PodeRoute -Method Get -Path '/api/diagnostics' -ScriptBlock {
         ''
     }
     Write-PodeTextResponse -Value ($report -join "`n") -ContentType 'text/plain; charset=utf-8'
+}
+
+Add-PodeRoute -Method Get -Path '/api/kiosk' -ScriptBlock {
+    $lastSeen = (Get-PodeState -Name 'Kiosk')['LastSeen']
+    Write-PodeJsonResponse -Value @{
+        isSeen      = $null -NE $lastSeen
+        secondsAgo  = $null -EQ $lastSeen ? $null : [System.Math]::Round(([System.DateTime]::UtcNow - $lastSeen).TotalSeconds)
+    }
 }

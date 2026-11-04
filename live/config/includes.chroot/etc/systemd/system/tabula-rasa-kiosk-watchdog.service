@@ -1,0 +1,11 @@
+# Stops the kiosk and shows the text menu when the kiosk browser never reaches the web server.
+[Unit]
+Description=Tabula Rasa kiosk watchdog
+After=tabula-rasa-kiosk.service
+
+[Service]
+Type=oneshot
+ExecStart=/usr/local/sbin/tabula-rasa-kiosk-watchdog
+
+[Install]
+WantedBy=graphical.target
