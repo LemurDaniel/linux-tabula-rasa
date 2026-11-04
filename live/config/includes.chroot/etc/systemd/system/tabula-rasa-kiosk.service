@@ -28,8 +28,8 @@ UtmpMode=user
 Environment=XDG_SESSION_TYPE=wayland
 # Without GPU firmware (not shipped) the GPU driver may not load, software rendering keeps the kiosk up.
 Environment=WLR_RENDERER_ALLOW_SOFTWARE=1
-# Waits up to 3 minutes for the web server, then starts Chromium anyway (it shows the error page).
-ExecStartPre=/bin/sh -c 'for i in $(seq 1 180); do curl -sf -o /dev/null http://localhost/api/info && exit 0; sleep 1; done; exit 0'
+# Waits up to 3 minutes for the web server and prints the progress on tty1, '+' runs it as root.
+ExecStartPre=+/usr/local/sbin/tabula-rasa-wait-server
 TimeoutStartSec=240
 ExecStart=/usr/bin/cage -s -- /usr/bin/chromium --enable-logging=stderr --v=0 --kiosk --no-first-run --noerrdialogs --disable-translate --disable-features=Translate --password-store=basic --ozone-platform=wayland --app=http://localhost/
 Restart=on-failure

@@ -1,0 +1,40 @@
+#!/bin/sh
+# NOTE:
+#   ExecStartPre of tabula-rasa-kiosk.service, runs as root ('+') to write on tty1.
+#   Waits for the web server and prints the progress on tty1: pwsh and Pode need minutes
+#   on a slow machine or in fail-safe mode, a black screen in that time looks like a hang.
+#   Always exits 0, Chromium starts anyway and shows its error page.
+
+WAIT_SECONDS=180
+PRINT_EVERY_SECONDS=5
+INFO_URL="http://localhost/api/info"
+CONSOLE="/dev/tty1"
+
+print() {
+    printf '%s\n' "$1" >> "${CONSOLE}" 2>/dev/null
+    echo "$1"
+}
+
+print ""
+print "Tabula Rasa: starting the web server, this can take a few minutes ..."
+
+seconds=0
+while [ "${seconds}" -lt "${WAIT_SECONDS}" ]; do
+    if curl -sf -o /dev/null "${INFO_URL}"; then
+        print "Tabula Rasa: web server is up after ${seconds} s, starting the screen."
+        exit 0
+    fi
+
+    if [ $((seconds % PRINT_EVERY_SECONDS)) -eq 0 ] && [ "${seconds}" -gt 0 ]; then
+        # The phone can already open the address while the screen still waits.
+        addresses="$(hostname -I 2>/dev/null | tr -s ' ' | sed 's/ *$//')"
+        print "Tabula Rasa: still waiting for the web server (${seconds} s) ... IP: ${addresses:-none yet}"
+    fi
+
+    sleep 1
+    seconds=$((seconds + 1))
+done
+
+print "Tabula Rasa: web server did not answer within ${WAIT_SECONDS} s, starting the screen anyway."
+print "             Ctrl+Alt+F2 opens the text menu, Ctrl+Alt+F3 a shell."
+exit 0

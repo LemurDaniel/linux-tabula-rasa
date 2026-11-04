@@ -4,6 +4,7 @@
 #   Every option here ends up in config/, see 'man lb_config'.
 #
 #   Boot parameters:
+#     no 'quiet'                   Kernel and systemd print every step, a slow boot never looks like a hang.
 #     live-config.nottyautologin   Disables the default autologin of the 'user' account,
 #                                  tty2 logs in as root via the getty override in includes.chroot.
 #     live-config.hostname         The name avahi announces, the phone opens http://tabula-rasa.local/.
@@ -32,5 +33,5 @@ lb config noauto \
     --image-name linux-tabula-rasa \
     --iso-application "Linux Tabula Rasa" \
     --iso-volume "TABULA_RASA" \
-    --bootappend-live "boot=live components quiet live-config.nottyautologin live-config.hostname=tabula-rasa" \
+    --bootappend-live "boot=live components live-config.nottyautologin live-config.hostname=tabula-rasa" \
     "${@}"
