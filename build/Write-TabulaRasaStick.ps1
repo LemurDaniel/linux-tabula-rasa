@@ -131,6 +131,7 @@ $OUT_PATH        = Join-Path -Path $PSScriptRoot -ChildPath '../out'
 # ===========================================================================
 #
 #   Test-IsAdministrator   Whether the shell runs elevated.
+#   Save-WebFile           Downloads one URL into a file and shows a progress bar.
 #   Save-ReleaseIso        Downloads the newest release ISO and checks its checksum.
 #   Get-UsbDisk            USB disks that are neither boot nor system disk.
 #   Copy-RawImage          Copies a file sector-aligned onto a raw device (or a file).
@@ -144,11 +145,79 @@ function Test-IsAdministrator {
 
 <#
 .SYNOPSIS
+    Streams one URL into a file in chunks and shows a progress bar.
+
+.DESCRIPTION
+    Without a Content-Length from the server the bar shows the downloaded MB only.
+    HttpClient follows the redirect to the asset storage and drops the Authorization header there.
+#>
+function Save-WebFile {
+    param (
+        [System.String] $Uri,
+        [System.String] $OutFile,
+        [System.Collections.Hashtable] $Headers = @{}
+    )
+
+    $activity = "Downloading $(Split-Path -Path $OutFile -Leaf)"
+    $client   = [System.Net.Http.HttpClient]::new()
+    $client.Timeout = [System.Threading.Timeout]::InfiniteTimeSpan
+    try {
+        $request = [System.Net.Http.HttpRequestMessage]::new([System.Net.Http.HttpMethod]::Get, $Uri)
+        $null = $request.Headers.TryAddWithoutValidation('User-Agent', 'Write-TabulaRasaStick')
+        foreach ($name in $Headers.Keys) {
+            $null = $request.Headers.TryAddWithoutValidation($name, $Headers[$name])
+        }
+
+        $response = $client.SendAsync($request, [System.Net.Http.HttpCompletionOption]::ResponseHeadersRead).GetAwaiter().GetResult()
+        if (-NOT $response.IsSuccessStatusCode) {
+            throw [System.Net.Http.HttpRequestException]::new("'$Uri' must be downloadable, got HTTP $([System.Int32] $response.StatusCode) $($response.ReasonPhrase).")
+        }
+
+        $total        = $response.Content.Headers.ContentLength   # null when the server does not send it
+        $sourceStream = $response.Content.ReadAsStreamAsync().GetAwaiter().GetResult()
+        $targetStream = [System.IO.File]::Create($OutFile)
+        try {
+            $buffer     = [System.Byte[]]::new($CHUNK_BYTES)
+            $received   = [System.Int64] 0
+            $lastUpdate = [System.Diagnostics.Stopwatch]::StartNew()
+
+            while (($readCount = $sourceStream.Read($buffer, 0, $CHUNK_BYTES)) -GT 0) {
+                $targetStream.Write($buffer, 0, $readCount)
+                $received += $readCount
+
+                # Write-Progress is slow, so it is refreshed a few times per second only.
+                if ($lastUpdate.ElapsedMilliseconds -LT 250) {
+                    continue
+                }
+                $lastUpdate.Restart()
+                if ($null -NE $total -AND $total -GT 0) {
+                    Write-Progress -Activity $activity -Status "$([System.Math]::Floor($received / 1MB)) of $([System.Math]::Floor($total / 1MB)) MB" -PercentComplete (100 * $received / $total)
+                }
+                else {
+                    Write-Progress -Activity $activity -Status "$([System.Math]::Floor($received / 1MB)) MB"
+                }
+            }
+        }
+        finally {
+            $targetStream.Dispose()
+            $sourceStream.Dispose()
+        }
+    }
+    finally {
+        Write-Progress -Activity $activity -Completed
+        $client.Dispose()
+    }
+}
+
+<#
+.SYNOPSIS
     Downloads the ISO and SHA256SUMS of the newest release and returns the checked ISO.
 
 .DESCRIPTION
-    > gh is installed   Downloads with the GitHub CLI, works for private repositories when logged in.
+    > gh is installed   Reads the release and a token from the GitHub CLI, works for private
+                        repositories when logged in.
     > otherwise         Uses the public API, works only while the repository is public.
+    Both download the assets via the API with Save-WebFile, so a progress bar shows.
     Throws when the ISO does not match its line in SHA256SUMS.
 #>
 function Save-ReleaseIso {
@@ -158,27 +227,36 @@ function Save-ReleaseIso {
     )
 
     $null = New-Item -ItemType Directory -Path $Destination -Force
+    $headers = @{ Accept = 'application/octet-stream' }
 
     # gh is installed
     if ($null -NE (Get-Command -Name gh -ErrorAction SilentlyContinue)) {
-        Write-Verbose "[Write-TabulaRasaStick] Downloading the newest release of '$Repository' with gh."
-        gh release download --repo $Repository --pattern '*.iso' --pattern 'SHA256SUMS' --dir $Destination --clobber
+        Write-Verbose "[Write-TabulaRasaStick] Reading the newest release of '$Repository' with gh."
+        $releaseJson = gh api "repos/$Repository/releases/latest"
         if ($LASTEXITCODE -NE 0) {
-            throw [System.InvalidOperationException]::new("gh must download the newest release of '$Repository', got exit code $LASTEXITCODE. Is there a release, and is gh logged in (gh auth login)?")
+            throw [System.InvalidOperationException]::new("gh must read the newest release of '$Repository', got exit code $LASTEXITCODE. Is there a release, and is gh logged in (gh auth login)?")
+        }
+        $release = $releaseJson | ConvertFrom-Json
+        $token   = gh auth token
+        if ($LASTEXITCODE -EQ 0 -AND -NOT [System.String]::IsNullOrEmpty($token)) {
+            $headers.Authorization = "Bearer $token"
         }
     }
     # otherwise
     else {
-        Write-Verbose "[Write-TabulaRasaStick] gh not found, downloading the newest release of '$Repository' via the public API."
+        Write-Verbose "[Write-TabulaRasaStick] gh not found, reading the newest release of '$Repository' via the public API."
         try {
             $release = Invoke-RestMethod -Uri "https://api.github.com/repos/$Repository/releases/latest"
         }
         catch [Microsoft.PowerShell.Commands.HttpResponseException] {
             throw [System.InvalidOperationException]::new("The newest release of '$Repository' must be reachable. A private repository needs the GitHub CLI (gh) logged in.", $_.Exception)
         }
-        foreach ($asset in $release.assets | Where-Object { $_.name -LIKE '*.iso' -OR $_.name -EQ 'SHA256SUMS' }) {
-            Invoke-WebRequest -Uri $asset.browser_download_url -OutFile (Join-Path -Path $Destination -ChildPath $asset.name)
-        }
+    }
+
+    # The API url of an asset (not browser_download_url) also works for private repositories.
+    foreach ($asset in $release.assets | Where-Object { $_.name -LIKE '*.iso' -OR $_.name -EQ 'SHA256SUMS' }) {
+        Write-Verbose "[Write-TabulaRasaStick] Downloading '$($asset.name)' ($([System.Math]::Floor($asset.size / 1MB)) MB)."
+        Save-WebFile -Uri $asset.url -OutFile (Join-Path -Path $Destination -ChildPath $asset.name) -Headers $headers
     }
 
     # Checksum: SHA256SUMS holds '<hash>  <file>' lines, the ISO's line must match its hash.
@@ -328,6 +406,7 @@ if ($isWhatIfSkip) {
     Write-Host 'What if: Downloading or building the ISO (skipped, using the newest existing ISO in out/).'
 }
 elseif ($FromRelease) {
+    Write-Host 'Downloading or building the ISO.'
     $IsoPath = Save-ReleaseIso -Repository $Repository -Destination $OUT_PATH
 }
 elseif ($Build) {
