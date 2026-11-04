@@ -1,4 +1,5 @@
-# Installed without recommends (auto/config), so everything the system needs is listed here.
+# Recommended packages come along (auto/config). Packages the system relies on are still listed
+# explicitly, so they stay even if a recommendation changes.
 
 # Live system
 live-boot
@@ -23,6 +24,9 @@ unzip
 
 # Kiosk: cage (Wayland kiosk compositor) + Chromium on tty1
 # Mesa renders on Intel/AMD GPUs, without GPU firmware the kiosk falls back to software rendering.
+# cage needs a logind session for screen and input (PAMName=login), libpam-systemd opens it.
+dbus
+libpam-systemd
 cage
 chromium
 chromium-sandbox

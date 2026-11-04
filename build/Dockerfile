@@ -21,14 +21,20 @@ WORKDIR /build
 # 1. Copies the live-build config into a fresh build tree.
 # 2. chmod: a checkout on Windows loses the executable bit of auto/config and the hooks.
 # 3. Ships both modules under /opt/tabula-rasa and the build-time settings under /etc/tabula-rasa.
-# 4. Builds and hands the ISO to /out.
-# 5. Writes the size report from the chroot that went into the image.
+# 4. Boot menu with a 5 s timeout (UEFI: grub, BIOS: isolinux), the defaults wait forever and a
+#    stick without screen would never boot. live-build takes templates from config/bootloaders.
+# 5. Builds and hands the ISO to /out.
+# 6. Writes the size report from the chroot that went into the image.
 CMD set -e; \
     cp -a /src/live/. /build/; \
     chmod +x /build/auto/* /build/config/hooks/live/*; \
     mkdir -p /build/config/includes.chroot/opt/tabula-rasa /build/config/includes.chroot/etc/tabula-rasa; \
     cp -a /src/src/TabulaRasa /src/src/TabulaRasa.Web /build/config/includes.chroot/opt/tabula-rasa/; \
     cp /config/hotspot.json /build/config/includes.chroot/etc/tabula-rasa/hotspot.json; \
+    mkdir -p /build/config/bootloaders; \
+    cp -a /usr/share/live/build/bootloaders/grub-pc /usr/share/live/build/bootloaders/isolinux /build/config/bootloaders/; \
+    printf '\nset timeout=5\n' >> /build/config/bootloaders/grub-pc/config.cfg; \
+    sed -i 's/^timeout 0$/timeout 50/' /build/config/bootloaders/isolinux/isolinux.cfg; \
     lb config; \
     lb build; \
     cp /build/*.iso /out/; \

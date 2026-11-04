@@ -117,7 +117,9 @@ function Show-TabulaRasaWipeDialog {
             } while ($current.Name -CONTAINS $Disk.Name -AND [System.DateTime]::Now -LT $deadline)
             return , $current
         }
-        if (@($Remaining).Name -CONTAINS $Disk.Name) {
+        # The status command may hand back $null for an empty list, @() would count it as one disk.
+        $Remaining = @($Remaining | Where-Object { $null -NE $_ })
+        if ($Remaining.Name -CONTAINS $Disk.Name) {
             Write-SpectreHost -Message '[grey]Not unplugged in time, nothing was wiped.[/]'
             Read-SpectrePause
             return
@@ -127,17 +129,18 @@ function Show-TabulaRasaWipeDialog {
         $Added = Invoke-SpectreCommandWithStatus -Title 'Plug it in again ...' -Spinner Dots -ScriptBlock {
             do {
                 Start-Sleep -Milliseconds $REPLUG_POLL_MS
-                $added = @((Compare-TabulaRasaDiskSet -Before @($Remaining) -After @(Get-TabulaRasaDisk)).Added)
+                $added = @((Compare-TabulaRasaDiskSet -Before $Remaining -After @(Get-TabulaRasaDisk)).Added)
             } while ($added.Count -EQ 0 -AND [System.DateTime]::Now -LT $deadline)
             return , $added
         }
-        if (@($Added).Count -NE 1) {
-            Write-SpectreHost -Message "[grey]Expected one device to come back, got $(@($Added).Count). Nothing was wiped.[/]"
+        $Added = @($Added | Where-Object { $null -NE $_ })
+        if ($Added.Count -NE 1) {
+            Write-SpectreHost -Message "[grey]Expected one device to come back, got $($Added.Count). Nothing was wiped.[/]"
             Read-SpectrePause
             return
         }
 
-        $Target = @($Added)[0]
+        $Target = $Added[0]
         $prompt = Get-SpectreEscapedText -Text "Wipe $($Target.Path)  $($Target.Model)  $(Format-TabulaRasaSize -Bytes $Target.SizeBytes)?"
         if (-NOT (Read-SpectreConfirm -Message "[red]$prompt[/]" -DefaultAnswer 'n')) {
             Write-SpectreHost -Message '[grey]Cancelled, nothing was wiped.[/]'

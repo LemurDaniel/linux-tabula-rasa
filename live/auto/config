@@ -10,8 +10,8 @@
 #
 #   Size (the defaults of live-build would add about half a gigabyte):
 #     --firmware-chroot/-binary false   Not every firmware package, only the Wi-Fi ones from the package list.
-#     --apt-recommends false            No recommended packages, the needed ones are listed explicitly.
 #     --apt-indices false               No apt package lists in the image, the live system never installs.
+#   Recommended packages stay on: without them the live system booted with errors.
 #     --chroot-squashfs-compression-*   xz, smaller than the default at the cost of a slower build.
 
 set -e
@@ -26,7 +26,6 @@ lb config noauto \
     --memtest none \
     --firmware-chroot false \
     --firmware-binary false \
-    --apt-recommends false \
     --apt-indices false \
     --apt-source-archives false \
     --chroot-squashfs-compression-type xz \

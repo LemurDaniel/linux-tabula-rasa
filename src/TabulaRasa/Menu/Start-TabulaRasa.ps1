@@ -52,9 +52,10 @@ function Start-TabulaRasa {
         Write-SpectreRule -Title 'secure disk wipe' -Color Grey
 
         # Disks
+        # Without any disk the status command hands back $null, which @() would count as one disk.
         $Disks = @(Invoke-SpectreCommandWithStatus -Title 'Detecting disks ...' -Spinner Dots -ScriptBlock {
             Get-TabulaRasaDisk
-        })
+        } | Where-Object { $null -NE $_ })
 
         if ($Disks.Count -GT 0) {
             $Disks

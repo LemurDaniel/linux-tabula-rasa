@@ -1,20 +1,25 @@
 # NOTE:
-#   Loaded by Use-PodeRoutes in Start-TabulaRasaServer. Both routes are public (no session).
+#   Loaded by Use-PodeRoutes in Start-TabulaRasaServer. All routes are public (no session).
 #
-#   GET /api/info        Network (URLs, hotspot) and who holds the session.
-#   GET /api/qr?text=    The text as QR code (SVG), for the URLs and the hotspot login.
+#   GET  /api/info        Network (URLs, hotspot) and who holds the session.
+#   GET  /api/qr?text=    The text as QR code (SVG), for the URLs and the hotspot login.
+#   POST /api/console     Switches the screen to the text menu on tty2, from the kiosk only.
+#   GET  /api/diagnostics Failed units and the logs of kiosk and server as plain text, for a phone
+#                         when the screen stays black.
 
 #
 #   Chapters:
-#     INFO ROUTES   Reachability and QR codes for the start screen.
+#     INFO ROUTES   Reachability, QR codes and the way out to the text menu.
 #
 
 # ===========================================================================
 # =============================   INFO ROUTES   =============================
 # ===========================================================================
 #
-#   GET /api/info   Network, session owner and seconds until it is free.
-#   GET /api/qr     Renders text as SVG QR code with qrencode.
+#   GET /api/info       Network, session owner and seconds until it is free.
+#   GET /api/qr         Renders text as SVG QR code with qrencode.
+#   POST /api/console   chvt 2 for the kiosk, cage does not always let Ctrl+Alt+F2 through.
+#   GET /api/diagnostics   systemctl and journalctl output, read-only.
 #
 
 Add-PodeRoute -Method Get -Path '/api/info' -ScriptBlock {
@@ -52,4 +57,40 @@ Add-PodeRoute -Method Get -Path '/api/qr' -ScriptBlock {
         return
     }
     Write-PodeTextResponse -Value ($svg -join "`n") -ContentType 'image/svg+xml'
+}
+
+Add-PodeRoute -Method Post -Path '/api/console' -ScriptBlock {
+    $TEXT_MENU_TTY = 2
+
+    # Only the kiosk on this machine may switch its own screen, a phone has nothing to switch.
+    if (-NOT [System.Net.IPAddress]::IsLoopback($WebEvent.Request.RemoteEndPoint.Address)) {
+        Write-TabulaRasaWebError -StatusCode 403 -Message 'The text menu can only be opened from the screen of the stick.'
+        return
+    }
+
+    chvt $TEXT_MENU_TTY
+    if ($LASTEXITCODE -NE 0) {
+        Write-TabulaRasaWebError -StatusCode 500 -Message "chvt must switch to tty$TEXT_MENU_TTY, got exit code $LASTEXITCODE."
+        return
+    }
+    Write-PodeJsonResponse -Value @{ tty = $TEXT_MENU_TTY }
+}
+
+Add-PodeRoute -Method Get -Path '/api/diagnostics' -ScriptBlock {
+    # Title and command per block, every command only reads.
+    $Blocks = [ordered]@{
+        'Failed units'                  = { systemctl --failed --no-pager }
+        'Kiosk (tabula-rasa-kiosk)'     = { journalctl -b -u tabula-rasa-kiosk -n 80 --no-pager }
+        'Server (tabula-rasa-server)'   = { journalctl -b -u tabula-rasa-server -n 30 --no-pager }
+        'Hotspot (tabula-rasa-hotspot)' = { journalctl -b -u tabula-rasa-hotspot -n 20 --no-pager }
+        'Warnings and errors'           = { journalctl -b -p warning -n 80 --no-pager }
+        'Graphics devices'              = { Get-ChildItem -Path /dev/dri -ErrorAction SilentlyContinue | ForEach-Object Name }
+    }
+
+    $report = foreach ($title in $Blocks.Keys) {
+        "===== $title ====="
+        & $Blocks[$title] 2>&1 | ForEach-Object { [System.String] $_ }
+        ''
+    }
+    Write-PodeTextResponse -Value ($report -join "`n") -ContentType 'text/plain; charset=utf-8'
 }

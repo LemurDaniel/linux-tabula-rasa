@@ -7,6 +7,7 @@
 #   Triggers:
 #     workflow_dispatch   Manual build from the Actions tab (artifact only).
 #     push of a tag v*    Release build, e.g. 'git tag v0.1.0 && git push --tags'.
+#                         A tag with a suffix (v0.1.0-rc.1) becomes a pre-release for testing.
 #
 #   No extra secrets: the release job uses the GITHUB_TOKEN with contents: write.
 # ---------------------------------------------------------------------------
@@ -123,7 +124,12 @@ jobs:
           $Hash = (Get-FileHash -Path "./out/$IsoName" -Algorithm SHA256).Hash.ToLowerInvariant()
           "$Hash  $IsoName" | Set-Content -Path ./out/SHA256SUMS -Encoding utf8NoBOM
 
-          gh release create $env:TAG "./out/$IsoName" ./out/SHA256SUMS --title "Linux Tabula Rasa $($env:TAG)" --generate-notes
+          # A tag with a suffix (v0.1.0-rc.1) is a test build: pre-release, never shown as "latest".
+          $ReleaseArgs = @($env:TAG, "./out/$IsoName", './out/SHA256SUMS', '--title', "Linux Tabula Rasa $($env:TAG)", '--generate-notes')
+          if ($env:TAG.Contains('-')) {
+              $ReleaseArgs += '--prerelease'
+          }
+          gh release create @ReleaseArgs
           if ($LASTEXITCODE -NE 0) {
               throw [System.InvalidOperationException]::new("gh release create must succeed, got exit code $LASTEXITCODE.")
           }

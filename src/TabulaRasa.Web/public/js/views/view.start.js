@@ -63,6 +63,7 @@ function render({ info }) {
             ${qrCodes}
             ${lock}
             <button id="start" class="primary block" ${isDisabled ? 'disabled' : ''}>${buttonLabel}</button>
+            ${isLocal ? '<div style="margin-top:10px"><button id="console" class="ghost block">Text menu (tty2)</button></div>' : ''}
         </section>`
 }
 
@@ -72,6 +73,11 @@ export default async function show({ app, navId }) {
 
     // Delegated, the button survives the re-renders of the refresh below.
     app.root.onclick = async event => {
+        // The way out of the kiosk: the server switches the screen to the text menu.
+        if (event.target.id === 'console') {
+            await request({ path: '/api/console', method: 'POST' }).catch(exception => app.toast(exception.message))
+            return
+        }
         if (event.target.id !== 'start') return
         const result = await claimSession({ isTakeover: info.isLocal && info.session.isLocked })
             .catch(exception => ({ isGranted: false, error: exception.message }))

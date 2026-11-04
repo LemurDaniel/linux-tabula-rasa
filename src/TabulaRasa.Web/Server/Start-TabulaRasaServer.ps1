@@ -84,7 +84,7 @@ function Start-TabulaRasaServer {
     $CORE_MODULE     = (Resolve-Path -Path (Join-Path -Path $ModulePath -ChildPath 'TabulaRasa.psm1')).Path
     $WEB_MODULE      = Join-Path -Path $WEB_ROOT -ChildPath 'TabulaRasa.Web.psm1'
     $THREAD_COUNT    = 4
-    $PUBLIC_PATHS    = @('/api/info', '/api/qr', '/api/session')
+    $PUBLIC_PATHS    = @('/api/info', '/api/qr', '/api/session', '/api/console', '/api/diagnostics')
 
     Start-PodeServer -Threads $THREAD_COUNT -ScriptBlock {
         Add-PodeEndpoint -Address * -Port $Port -Protocol Http

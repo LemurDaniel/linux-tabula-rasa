@@ -12,6 +12,7 @@ The folder layout is the one live-build expects, the Dockerfile copies it as bui
 | `config/includes.chroot/etc/systemd/system/tabula-rasa-fallback.service` | Switches to tty2 when the kiosk fails three times. |
 | `config/includes.chroot/etc/systemd/system/tabula-rasa-hotspot.service` | Opens the hotspot when no LAN shows up within 30 seconds. |
 | `config/includes.chroot/etc/systemd/system/getty@tty2.service.d/override.conf` | Autologin of root on tty2. |
+| `config/includes.chroot/etc/systemd/system/getty@tty3.service.d/override.conf` | Autologin of root on tty3, a plain shell. |
 | `config/includes.chroot/root/.bash_profile` | Starts the text menu on tty2. |
 
 Copied in at build time by the Dockerfile:

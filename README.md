@@ -143,8 +143,15 @@ tty2   Text menu (PwshSpectreConsole), also the fallback without a GPU
      A disk swapped in the meantime under the same name is refused.
    - USB stick, SD card: unplug it and plug it in again (their serial is rarely printed or real).
 
-`Alt+F2` switches to the text menu, `Alt+F1` back to the kiosk. When the kiosk cannot start (no GPU),
-the stick switches to the text menu on its own.
+| Screen | How to get there |
+| --- | --- |
+| Kiosk (tty1) | Starts by itself, `Ctrl+Alt+F1` from the consoles |
+| Text menu (tty2) | `Ctrl+Alt+F2`, or the button **Text menu** on the kiosk start screen |
+| Root shell (tty3) | `Ctrl+Alt+F3` |
+
+When the kiosk crashes three times, the stick switches to the text menu on its own.
+When the screen stays black, open `http://tabula-rasa.local/api/diagnostics` on a phone: failed services and
+the logs of kiosk and server, no keyboard needed.
 
 ## Releases
 A tag `v*` builds the ISO on GitHub Actions and publishes it as release
