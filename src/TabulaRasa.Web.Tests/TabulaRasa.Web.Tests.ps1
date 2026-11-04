@@ -5,7 +5,7 @@
 #
 #   Chapters:
 #     CONTROL SESSION REPLUG AND JOBS   Session lock, replug state machine, job list.
-#     HOTSPOT                           Hotspot first, LAN as the second way.
+#     HOTSPOT                           LAN first, the hotspot only without it.
 #
 
 # Variables set in BeforeAll are used in the It blocks, the analyzer cannot follow Pester's scopes.
@@ -158,7 +158,7 @@ Describe 'New-TabulaRasaWebJob' {
 # ===============================   HOTSPOT   ===============================
 # ===========================================================================
 #
-#   Start-TabulaRasaWebHotspot   Opens the hotspot also with LAN, skips it without a Wi-Fi card.
+#   Start-TabulaRasaWebHotspot   Skips the hotspot with LAN, opens it without LAN.
 #
 
 Describe 'Start-TabulaRasaWebHotspot' {
@@ -177,7 +177,7 @@ Describe 'Start-TabulaRasaWebHotspot' {
         Mock -ModuleName TabulaRasa.Web -CommandName Get-Content -MockWith { '{ "Ssid": "TabulaRasa", "Password": "wipe-it-clean" }' }
     }
 
-    It 'opens the hotspot although a LAN cable is connected' {
+    It 'leaves the network to LAN when a cable is connected' {
         Mock -ModuleName TabulaRasa.Web -CommandName nmcli -MockWith {
             $global:NmcliCalls.Add("$args")
             $global:LASTEXITCODE = 0
@@ -185,18 +185,18 @@ Describe 'Start-TabulaRasaWebHotspot' {
             if ($args[-1] -EQ 'device') { 'ethernet:connected'; 'wifi:disconnected' }
         }
         Start-TabulaRasaWebHotspot -WaitSeconds 0
-        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' }) | Should -HaveCount 1
-        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' })[0] | Should -BeLike '*ssid TabulaRasa password wipe-it-clean*'
+        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' }) | Should -HaveCount 0
     }
 
-    It 'leaves the network to LAN without a Wi-Fi card' {
+    It 'opens the hotspot without LAN' {
         Mock -ModuleName TabulaRasa.Web -CommandName nmcli -MockWith {
             $global:NmcliCalls.Add("$args")
             $global:LASTEXITCODE = 0
             # 'nmcli -t -f TYPE,STATE device': the device list, every other call is the hotspot.
-            if ($args[-1] -EQ 'device') { 'ethernet:connected' }
+            if ($args[-1] -EQ 'device') { 'ethernet:unavailable'; 'wifi:disconnected' }
         }
         Start-TabulaRasaWebHotspot -WaitSeconds 0
-        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' }) | Should -HaveCount 0
+        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' }) | Should -HaveCount 1
+        @($global:NmcliCalls | Where-Object { $_ -LIKE '*hotspot*' })[0] | Should -BeLike '*ssid TabulaRasa password wipe-it-clean*'
     }
 }

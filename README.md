@@ -90,7 +90,7 @@ Linux:
 ./build/write-tabula-rasa-stick.sh --build
 ```
 
-With your own hotspot name and password:
+With your own hotspot (used when the stick finds no LAN):
 ```powershell
 ./build/Write-TabulaRasaStick.ps1 -Build -HotspotSsid 'Wiper' -HotspotPassword 'not-my-wifi-password'
 ```
@@ -118,7 +118,7 @@ The hotspot password is stored in plain text on the stick and shown on the kiosk
 ## How it works
 ```
 tty1   Kiosk: cage + Chromium  ──►  http://localhost  ──┐
-Phone  ── hotspot / LAN ──►  http://tabula-rasa.local  ─┤
+Phone  ── LAN / hotspot ──►  http://<ip of the stick>  ─┤
                                                         ▼
                                Pode web server (pwsh, port 80)
                                                         │
@@ -127,9 +127,8 @@ tty2   Text menu (PwshSpectreConsole), also the fallback without a GPU
 ```
 
 1. The stick boots Debian trixie (UEFI with Secure Boot, or BIOS).
-2. The screen shows the web UI with QR codes for the phone. The stick announces itself as `tabula-rasa.local` (mDNS).
-   With a Wi-Fi card it opens the hotspot `TabulaRasa` right away: join it, then open `http://10.42.0.1/`.
-   LAN is the second way: with a cable the stick is also reachable through your router.
+2. The screen shows the web UI with QR codes of its IP addresses for the phone, e.g. `http://192.168.178.42/`.
+   Without a LAN cable it opens the Wi-Fi hotspot `TabulaRasa` after 30 seconds: join it, then open `http://10.42.0.1/`.
 3. One device controls the stick at a time: the first one that taps **Start**. The kiosk can always take over,
    an idle session is free again after 5 minutes.
 4. Every disk except the stick itself is listed. Picking one shows what is still on it, all read-only:
@@ -153,7 +152,7 @@ tty2   Text menu (PwshSpectreConsole), also the fallback without a GPU
 | Root shell (tty3) | `Ctrl+Alt+F3` |
 
 When the kiosk crashes three times, the stick switches to the text menu on its own.
-When the screen stays black, open `http://tabula-rasa.local/api/diagnostics` on a phone: failed services and
+When the screen stays black, open `http://<ip of the stick>/api/diagnostics` on a phone (the IP is in your router or on the boot screen): failed services and
 the logs of kiosk and server, no keyboard needed.
 
 ## Releases

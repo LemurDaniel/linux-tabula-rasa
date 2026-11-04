@@ -7,7 +7,7 @@
 #     no 'quiet'                   Kernel and systemd print every step, a slow boot never looks like a hang.
 #     live-config.nottyautologin   Disables the default autologin of the 'user' account,
 #                                  tty2 logs in as root via the getty override in includes.chroot.
-#     live-config.hostname         The name avahi announces, the phone opens http://tabula-rasa.local/.
+#     live-config.hostname         The host name, shown in the router's device list.
 #
 #   Size (the defaults of live-build would add about half a gigabyte):
 #     --firmware-chroot/-binary false   Not every firmware package, only the Wi-Fi ones from the package list.

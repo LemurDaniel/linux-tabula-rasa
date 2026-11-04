@@ -34,11 +34,10 @@ libgl1-mesa-dri
 fonts-dejavu-core
 fonts-noto-color-emoji
 
-# Network: DHCP on LAN, hotspot (wpasupplicant), mDNS (tabula-rasa.local), QR codes
+# Network: DHCP on LAN, hotspot (wpasupplicant), QR codes. No mDNS: the phone opens the IP.
 network-manager
 wpasupplicant
 dnsmasq-base
-avahi-daemon
 iproute2
 iw
 wireless-regdb

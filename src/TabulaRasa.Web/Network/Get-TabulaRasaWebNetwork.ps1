@@ -15,8 +15,8 @@ function Get-TabulaRasaWebNetwork {
 
     .DESCRIPTION
         The kiosk shows these URLs (and QR codes of them) so a phone finds the stick:
-        - http://<hostname>.local/   via mDNS (avahi), works on iOS and recent Android
-        - http://<ip>/               one per IPv4 address, the fallback without mDNS
+        - http://<ip>/   one per IPv4 address. No http://<hostname>.local/: mDNS did not
+                         resolve reliably on phones and routers, an IP always works.
         Hotspot holds SSID and password from Start-TabulaRasaWebHotspot, whether it runs and its URL
         (http://10.42.0.1/ with NetworkManager's shared network), the first way in for a phone.
 
@@ -52,7 +52,7 @@ function Get-TabulaRasaWebNetwork {
     $Addresses  = $Interfaces | ForEach-Object { $_.addr_info.local }
 
     $Hostname = [System.Net.Dns]::GetHostName()
-    $Urls     = @("http://$Hostname.local/") + @($Addresses | ForEach-Object { "http://$_/" })
+    $Urls     = @($Addresses | ForEach-Object { "http://$_/" })
 
     # ---------------------------------------------------------------------------
     # Hotspot

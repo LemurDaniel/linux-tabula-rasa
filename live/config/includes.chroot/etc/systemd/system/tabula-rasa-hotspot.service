@@ -1,6 +1,6 @@
-# Opens the Wi-Fi hotspot at boot as the first way in, LAN (NetworkManager) is the second.
+# Opens the Wi-Fi hotspot at boot when no LAN cable gets connected within 30 seconds.
 [Unit]
-Description=Tabula Rasa hotspot
+Description=Tabula Rasa hotspot fallback
 After=NetworkManager.service
 Wants=NetworkManager.service
 

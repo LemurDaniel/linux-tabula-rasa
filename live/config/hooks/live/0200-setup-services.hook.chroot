@@ -12,7 +12,6 @@ id kiosk >/dev/null 2>&1 || useradd --create-home --shell /usr/sbin/nologin --gr
 chmod +x /usr/local/sbin/tabula-rasa-kiosk-watchdog /usr/local/sbin/tabula-rasa-save-diagnostics /usr/local/sbin/tabula-rasa-wait-server
 
 systemctl enable NetworkManager.service
-systemctl enable avahi-daemon.service
 systemctl enable tabula-rasa-server.service
 systemctl enable tabula-rasa-hotspot.service
 systemctl enable tabula-rasa-kiosk.service
