@@ -1,19 +1,24 @@
 /* NOTE:
-     Styles of the Tabula Rasa web UI. Mobile first, one dark theme for kiosk and phone.
+     Styles of the Tabula Rasa web UI. Mobile first, one dark navy theme for kiosk and phone.
+     Glass cards on a navy background with a fine breathing grid.
 */
 
 :root {
-    --bg: #111318;
-    --surface: #1b1e26;
-    --surface-2: #252935;
-    --border: #2f3442;
-    --text: #e8e8ea;
-    --muted: #9aa0ad;
-    --accent: #ff8a3d;
-    --danger: #ff4d4f;
-    --ok: #3ccf91;
-    --warn: #ffc53d;
-    --radius: 14px;
+    --bg: #15233d;
+    --bg-deep: #101b31;
+    --surface: rgba(32, 50, 84, 0.72);
+    --surface-2: rgba(48, 70, 112, 0.62);
+    --surface-active: #2a4a86;
+    --border: rgba(140, 170, 225, 0.20);
+    --text: #eef2fa;
+    --muted: #a9b6cf;
+    --accent: #3d6fd6;
+    --accent-soft: rgba(61, 111, 214, 0.20);
+    --danger: #ff5c63;
+    --ok: #45d69c;
+    --warn: #ffcb52;
+    --radius: 8px;
+    --shadow: 0 10px 30px rgba(5, 12, 28, 0.35);
     color-scheme: dark;
 }
 
@@ -21,10 +26,34 @@
 
 body {
     margin: 0;
-    background: var(--bg);
+    min-height: 100vh;
+    background: linear-gradient(180deg, var(--bg) 0%, var(--bg-deep) 100%) fixed;
     color: var(--text);
     font: 16px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
     -webkit-tap-highlight-color: transparent;
+}
+
+/* Background: a fine grid that fades out to the edges and breathes slowly (opacity only, cheap on the kiosk) */
+body::before {
+    content: "";
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    pointer-events: none;
+    background-image:
+        linear-gradient(rgba(150, 180, 240, 0.07) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(150, 180, 240, 0.07) 1px, transparent 1px);
+    background-size: 40px 40px;
+    -webkit-mask-image: radial-gradient(ellipse at 50% 35%, #000 0%, transparent 75%);
+    mask-image: radial-gradient(ellipse at 50% 35%, #000 0%, transparent 75%);
+    animation: breathe 7s ease-in-out infinite;
+}
+@keyframes breathe {
+    0%, 100% { opacity: 0.6; }
+    50%      { opacity: 1; }
+}
+@media (prefers-reduced-motion: reduce) {
+    body::before { animation: none; }
 }
 
 /* Layout */
@@ -36,12 +65,12 @@ body {
     align-items: center;
     justify-content: space-between;
     padding: 12px 16px;
-    background: rgba(17, 19, 24, 0.92);
-    backdrop-filter: blur(8px);
+    background: rgba(21, 35, 61, 0.80);
+    backdrop-filter: blur(10px);
     border-bottom: 1px solid var(--border);
 }
 .brand { font-weight: 700; font-size: 18px; }
-.brand span { color: var(--accent); }
+.brand span { color: var(--text); }
 
 main {
     max-width: 920px;
@@ -61,28 +90,33 @@ button {
     font: inherit;
     font-weight: 600;
     border: 0;
-    border-radius: 12px;
-    padding: 14px 18px;
+    border-radius: 4px;
+    padding: 14px 20px;
     min-height: 48px;
     background: var(--surface-2);
     color: var(--text);
     cursor: pointer;
+    transition: background 0.15s, border-color 0.15s;
 }
+button:hover:not(:disabled) { background: var(--surface-active); }
 button:disabled { opacity: 0.45; cursor: not-allowed; }
-button.primary { background: var(--accent); color: #1a1006; }
+button.primary { background: var(--accent); color: #fff; border: 1px solid rgba(140, 175, 240, 0.35); }
+button.primary:hover:not(:disabled) { background: #4a7ce3; }
 button.danger { background: var(--danger); color: #fff; }
-button.ghost { background: transparent; border: 1px solid var(--border); min-height: 40px; padding: 8px 14px; }
+button.danger:hover:not(:disabled) { background: #ff767c; }
+button.ghost { background: transparent; color: var(--muted); border: 1px solid var(--border); min-height: 40px; padding: 8px 14px; }
 button.block { width: 100%; }
 
 input[type="text"], select {
     width: 100%;
     font: inherit;
     padding: 14px;
-    border-radius: 12px;
+    border-radius: 6px;
     border: 1px solid var(--border);
     background: var(--surface-2);
     color: var(--text);
 }
+input[type="text"]:focus, select:focus { outline: none; border-color: var(--accent); box-shadow: 0 0 0 3px var(--accent-soft); }
 
 .check { display: flex; gap: 12px; align-items: flex-start; margin: 14px 0; cursor: pointer; }
 .check input { width: 22px; height: 22px; flex: 0 0 auto; accent-color: var(--danger); }
@@ -95,22 +129,38 @@ input[type="text"], select {
     background: var(--surface);
     border: 1px solid var(--border);
     border-radius: var(--radius);
-    padding: 16px;
-    margin: 12px 0;
+    padding: 20px;
+    margin: 14px 0;
+    box-shadow: var(--shadow);
+    backdrop-filter: blur(6px);
 }
 .card > h2:first-child { margin-top: 0; }
-.card.clickable { cursor: pointer; transition: border-color 0.15s; }
-.card.clickable:hover, .card.clickable:focus-visible { border-color: var(--accent); outline: none; }
+.card.clickable { cursor: pointer; transition: border-color 0.15s, background 0.15s; }
+.card.clickable:hover, .card.clickable:focus-visible {
+    border-color: var(--accent);
+    background: linear-gradient(135deg, rgba(45, 80, 145, 0.85), rgba(32, 58, 108, 0.80));
+    outline: none;
+}
 .card.danger { border-color: var(--danger); }
 
 .disk-head { display: flex; gap: 14px; align-items: center; }
-.disk-icon { font-size: 34px; }
+.disk-icon {
+    flex: 0 0 auto;
+    display: grid;
+    place-items: center;
+    width: 64px;
+    height: 64px;
+    font-size: 32px;
+    border-radius: 8px;
+    background: var(--bg-deep);
+    border: 1px solid var(--border);
+}
 .disk-title { font-weight: 700; }
 
 .badge {
     display: inline-block;
     padding: 2px 10px;
-    border-radius: 999px;
+    border-radius: 4px;
     font-size: 12px;
     font-weight: 700;
     background: var(--surface-2);
@@ -121,15 +171,41 @@ input[type="text"], select {
 .badge.warn { color: var(--warn); }
 .badge.danger { color: var(--danger); }
 
-.notice { padding: 12px 14px; border-radius: 12px; background: rgba(255, 197, 61, 0.12); color: var(--warn); margin: 10px 0; }
-.notice.error { background: rgba(255, 77, 79, 0.12); color: var(--danger); }
-.notice.ok { background: rgba(60, 207, 145, 0.12); color: var(--ok); }
+.notice { padding: 12px 16px; border-radius: 6px; background: rgba(255, 203, 82, 0.12); border: 1px solid rgba(255, 203, 82, 0.25); color: var(--warn); margin: 10px 0; }
+.notice.error { background: rgba(255, 92, 99, 0.12); border-color: rgba(255, 92, 99, 0.28); color: var(--danger); }
+.notice.ok { background: rgba(69, 214, 156, 0.12); border-color: rgba(69, 214, 156, 0.28); color: var(--ok); }
 
-/* Tabs */
-.tabs { display: flex; gap: 6px; overflow-x: auto; margin: 12px 0; padding-bottom: 4px; }
-.tabs button { flex: 0 0 auto; min-height: 40px; padding: 8px 14px; background: var(--surface); border: 1px solid var(--border); }
-.tabs button.active { border-color: var(--accent); color: var(--accent); }
-.tabs button.tab-danger.active { border-color: var(--danger); color: var(--danger); }
+/* Tabs: index cards in a holder. The bottom border is the holder edge, the active card sticks out further. */
+.tabs {
+    display: flex;
+    align-items: flex-end;
+    gap: 4px;
+    overflow-x: auto;
+    margin: 16px 0;
+    padding: 10px 4px 0;
+    border-bottom: 2px solid var(--surface-active);
+}
+.tabs button {
+    flex: 0 0 auto;
+    min-height: 42px;
+    padding: 8px 20px;
+    border-radius: 4px 4px 0 0;
+    background: var(--surface);
+    color: var(--muted);
+    border: 1px solid var(--border);
+    border-bottom: 0;
+    transition: min-height 0.15s, background 0.15s, color 0.15s;
+}
+/* Taller instead of shifted, so the card stays on the holder edge without a gap */
+.tabs button:hover:not(:disabled):not(.active) { color: var(--text); min-height: 45px; }
+.tabs button.active {
+    min-height: 50px;
+    background: var(--surface-active);
+    color: var(--text);
+    border-color: rgba(140, 170, 225, 0.35);
+    box-shadow: 0 -4px 14px rgba(5, 12, 28, 0.35);
+}
+.tabs button.tab-danger.active { background: rgba(255, 92, 99, 0.22); border-color: rgba(255, 92, 99, 0.5); color: var(--danger); }
 
 /* Lists and tables */
 .list { list-style: none; margin: 0; padding: 0; }
@@ -140,7 +216,7 @@ input[type="text"], select {
     padding: 12px 4px;
     border-bottom: 1px solid var(--border);
 }
-.list li.folder { cursor: pointer; color: #7fb4ff; }
+.list li.folder { cursor: pointer; color: #8fbcff; }
 .list li .meta { color: var(--muted); font-size: 13px; white-space: nowrap; }
 .list li .name { overflow-wrap: anywhere; }
 
@@ -155,10 +231,10 @@ th { color: var(--muted); font-weight: 600; }
 /* Charts and progress */
 .bars { display: grid; gap: 8px; }
 .bar { display: grid; grid-template-columns: minmax(110px, 38%) 1fr auto; gap: 10px; align-items: center; font-size: 14px; }
-.bar-track { height: 12px; background: var(--surface-2); border-radius: 999px; overflow: hidden; }
-.bar-fill { height: 100%; background: var(--accent); border-radius: 999px; }
+.bar-track { height: 12px; background: var(--surface-2); border-radius: 3px; overflow: hidden; }
+.bar-fill { height: 100%; background: var(--accent); border-radius: 3px; }
 
-.progress { height: 14px; background: var(--surface-2); border-radius: 999px; overflow: hidden; margin: 10px 0; }
+.progress { height: 14px; background: var(--surface-2); border-radius: 3px; overflow: hidden; margin: 10px 0; }
 .progress > div { height: 100%; background: var(--accent); transition: width 0.4s; }
 
 .spinner {
@@ -183,8 +259,8 @@ th { color: var(--muted); font-weight: 600; }
 
 /* Steps of the replug */
 .steps { list-style: none; padding: 0; margin: 12px 0; }
-.steps li { padding: 12px 14px; border-radius: 12px; background: var(--surface-2); margin: 8px 0; color: var(--muted); }
-.steps li.active { color: var(--text); outline: 2px solid var(--accent); }
+.steps li { padding: 12px 14px; border-radius: 6px; background: var(--surface-2); margin: 8px 0; color: var(--muted); }
+.steps li.active { color: var(--text); background: var(--accent-soft); outline: 2px solid var(--accent); }
 .steps li.done { color: var(--ok); }
 
 .toast {
@@ -193,10 +269,11 @@ th { color: var(--muted); font-weight: 600; }
     bottom: 20px;
     transform: translateX(-50%);
     max-width: calc(100% - 32px);
-    background: var(--surface-2);
+    background: var(--surface-active);
     border: 1px solid var(--border);
-    padding: 12px 16px;
-    border-radius: 12px;
+    padding: 12px 18px;
+    border-radius: 4px;
+    box-shadow: var(--shadow);
     z-index: 20;
 }
 
